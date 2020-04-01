@@ -1,4 +1,4 @@
-# JASCUP
+# scupPS
 Just another System Center User Panel made to address missing features of the SCCM/MEMCM Approval Function.
 
 ## What does this Portal offer?
