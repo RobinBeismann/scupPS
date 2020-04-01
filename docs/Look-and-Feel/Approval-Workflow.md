@@ -40,6 +40,9 @@ The Admin Group can also delete Approvals which were previously created, this mi
 The user will receive the following mails depending on the actions taken in the user portal.
 The text can be customized in the file "views\api\AppRequest.ps1".
 
+### Request approved
 ![mail-1](https://raw.githubusercontent.com/RobinBeismann/scupPS/master/docs/images/mail_approved.png)
+### Request denied
 ![mail-2](https://raw.githubusercontent.com/RobinBeismann/scupPS/master/docs/images/mail_denied.png)
+### Request revoked
 ![mail-3](https://raw.githubusercontent.com/RobinBeismann/scupPS/master/docs/images/mail_revoked.png)

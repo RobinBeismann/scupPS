@@ -23,7 +23,7 @@ The Web UI is served by a bootstrap derived template called [AdminLTE](https://g
 * Ability to allow/deny requests from certain IP addresses and subnets
 * No own datasource / database: Pulls all informations from MEMCM/SCCM and uses native capabilities
 * **Application Approval Workflow**
-  * **Supports all Application Model based Apps in MEMCM/SCCM**
+  * *Supports all Application Model based Apps in MEMCM/SCCM*
   * **Manager View**
     * View pending Approval Requests which were started by your users using the native Software Center
     * View the history of Approval Requests for your Costcenter
