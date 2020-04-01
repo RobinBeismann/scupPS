@@ -1,35 +1,43 @@
 
-#Site Settings
+####### Site Settings
+# Site Title used in varius places on the site
 $siteTitle = "User Portal"
-
+# Copyright notice, keep the author in as according to the license on the Github Repository of scupPS - https://raw.githubusercontent.com/RobinBeismann/scupPS/master/LICENSE
 $siteCopyrightText = 'Copyright &copy; 2020 <a href="https://robin-beismann.com">Robin Beismann</a>.'
 
-#SMTP Settings
+####### SMTP Settings
+# SMTP Server Name
 $smtpServer = "smtp.contoso.com"
+# SMTP Sender
 $smtpSender = "%SenderDisplayName% <it-support-noreply@contoso.com>"
+# SMTP ReplyTo Address (used by the Respond Function in the mail clients)
 $smtpReplyTo = "it-support@contoso.com"
+# SMTP Admin Address, used by scupPS to send notifications for Approval Migration and Approval Deletion 
+$smtpAdminRecipient = "info@contoso.com"
+# The Mail signature used by the mail sending pages
+$smtpSignature = "IT Support"
 
-#Attributes
-$Attribute_costCenter = "extensionattribute12" #Holds the plaintext costcenter
-$Attribute_managedcostCenters = "extensionattribute5" #Holds the managed costcenters delimited by semicola - for example "10000;10005" 
+####### Attributes
+# This AD Attribute holds the plain costcenter of a user like '10001' 
+$Attribute_costCenter = "extensionattribute12"
+# This AD Attribute holds the managed costcenters of a costcenter owner delimited by semicola - for example '10000;10005' 
+$Attribute_managedcostCenters = "extensionattribute5" 
 
-#Numerous Collections
+####### Collection definition
+# Two example collections
 $Collection_Windows10Clients = "All Windows 10 Systems"
 $Collection_Windows7Clients = "All Windows 7 Systems"
-
-#Collections which are browsable by the client detail/summary pages
+# Collections which are browsable by the client detail/summary pages, this variable is actually used by scupPS
 $Collection_BrowsingAllowed  = $Collection_Windows10Clients, $Collection_Windows7Clients
 
-#Groups
+####### Groups
+# This group holds the users which are allowed to access the admin functions of the portal
 $Group_PortalAdmins = "CONTOSO\S-SCCM-AppPortal-Admins"
 
+####### SCCM Settings
 #SCCM Site Name
 $SiteName="ABC"
-#SCCM Server Name
+#SCCM Site Server Name used for the WMI Queries
 $SCCMServer="SCCM1"
 #SCCM Namespace
 $SCCMNameSpace="root\sms\site_$($SiteName)"
-
-#Admin Inform Mail
-$smtpAdminRecipient = "info@contoso.com"
-$smtpSignature = "IT Support"

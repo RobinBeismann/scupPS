@@ -3,14 +3,16 @@
 - title: Home
   url: /
 
-- title: Getting started
-  url: /Getting-Started/
+- title: Installation
+  url: /Installation/
   sublinks:
     - title: Prerequisites (using Choco)
-      url: /Getting-Started/Prerequisites-Choco
+      url: /Installation/Prerequisites-Choco
     - title: Prerequisites (Manual)
-      url: /Getting-Started/Prerequisites-Manual
+      url: /Installation/Prerequisites-Manual
     - title: IIS Configuration
-      url: /Getting-Started/IIS-Configuration
+      url: /Installation/IIS-Configuration
+    - title: scupPS Configuration
+      url: /Installation/scupPS-Configuration
     - title: Hardware Inventory Class Definition
-      url: /Getting-Started/Hardware-Inventory-Class-Definition
+      url: /Installation/Hardware-Inventory-Class-Definition

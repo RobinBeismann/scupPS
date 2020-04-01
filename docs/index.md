@@ -14,13 +14,30 @@ The Web UI is served by a bootstrap derived template called [AdminLTE](https://g
 
 ## Features
 
-* Completely built on PowerShell Core Version 7.0
+* Completely built on PowerShell **Core** Version 7.0
 * Support for native Single Sign On handled by the Internet Information Services (IIS) 
 * Listen on a single or multiple IP address/hostnames
 * Support for custom error pages
 * Request and Response compression using GZip/Deflate
 * Multi-thread support for incoming requests
 * Ability to allow/deny requests from certain IP addresses and subnets
+* **Application Approval Workflow**
+  * **Manager View**
+    * View pending Approval Requests which were started by your users using the native Software Center
+    * View the history of Approval Requests for your Costcenter
+    * Approve, Deny or Revoke Requests of Software for your Costcenter
+  * **User View**
+    * View your own requests and their Status
+  * **Admin View**
+    * See all requests and approve, deny or revoke them
+* **Helpdesk Functions**
+  * List Client Details: View a hardware summary of a client (Manufacturer, Model, Serialnumber, Name, Domain, Memory, Disks and Config Manager Client details)
+  * List Computers: View computers, their primary user, last activity, last AD Site and the last logged on User per Collection
+  * List Computer Summary: View a list of device models sorted by count
+  * List Software: View installed Updates of a client
+  * List Task Sequence Status: View the status of currently running or recently run task sequences
+  * List Updates: View installed Software on a client
+
 
 ## Quick Look!
 
