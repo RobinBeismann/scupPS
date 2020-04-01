@@ -3,8 +3,12 @@
 - title: Home
   url: /
 
+- title: Look and Feel
+  sublinks:
+    - title: Approval Workflow
+      url: /Look-and-Feel/Approval-Workflow.md
+
 - title: Installation
-  url: /Installation/
   sublinks:
     - title: Prerequisites (using Choco)
       url: /Installation/Prerequisites-Choco
