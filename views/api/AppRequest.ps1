@@ -55,7 +55,7 @@ $smtpSignature
 
 Hallo %requestorDisplayNameV2%,
 
-Ihr Kostenstellenverantwortlicher (%approverDisplayNameV2%) hat die Genehmigung für die Anwendung `"%softwareTitle%`" abgelehnt. Die Anwendung wird demn�chst von Ihrem Computer (%requestorMachine%) deinstalliert.
+Ihr Kostenstellenverantwortlicher (%approverDisplayNameV2%) hat die Genehmigung für die Anwendung `"%softwareTitle%`" abgelehnt. Die Anwendung wird demnächst von Ihrem Computer (%requestorMachine%) deinstalliert.
 Die angegebene Begründung lautet: %denyreason%
 
 Sollten Sie hierbei Hilfe benötigen, antworten Sie einfach auf diese Mail oder fragen Sie ihren Kostenstellenverantwortlichen.
