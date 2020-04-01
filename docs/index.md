@@ -21,6 +21,7 @@ The Web UI is served by a bootstrap derived template called [AdminLTE](https://g
 * Request and Response compression using GZip/Deflate
 * Multi-thread support for incoming requests
 * Ability to allow/deny requests from certain IP addresses and subnets
+* No own datasource / database: Pulls all informations from MEMCM/SCCM and uses native capabilities
 * **Application Approval Workflow**
   * **Supports all Application Model based Apps in MEMCM/SCCM**
   * **Manager View**

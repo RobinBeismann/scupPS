@@ -6,7 +6,10 @@
 - title: Look and Feel
   sublinks:
     - title: Approval Workflow
-      url: /Look-and-Feel/Approval-Workflow.md
+      url: /Look-and-Feel/Approval-Workflow
+  sublinks:
+    - title: Helpdesk Functions
+      url: /Look-and-Feel/Helpdesk
 
 - title: Installation
   sublinks:
