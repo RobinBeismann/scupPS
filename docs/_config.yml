@@ -1,1 +1,7 @@
 theme: jekyll-theme-slate
+nav:
+- page: Welcome
+  permalink: index
+
+- page: Getting Started
+  permalink: pages/gettingstarted
