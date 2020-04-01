@@ -1,3 +1,5 @@
+{% include navigation.html}
+
 # Welcome
 
 [![GNU AGPLv3 licensed](https://img.shields.io/badge/license-AGPLv3-blue.svg)](https://raw.githubusercontent.com/RobinBeismann/scupPS/master/LICENSE)
