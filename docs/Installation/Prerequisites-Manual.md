@@ -1,3 +1,5 @@
+{% include navigation.html%}
+
 # IIS
 
 As mentioned earlier this Portal is hosted on [Pode](https://github.com/Badgerati/Pode) which is in this case hosted on IIS.

@@ -1,3 +1,5 @@
+{% include navigation.html%}
+
 # scupPS Configuration Steps
 This document describes the main configuration steps for scupPS
 
