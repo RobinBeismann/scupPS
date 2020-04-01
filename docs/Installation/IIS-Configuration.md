@@ -2,7 +2,8 @@
 
 ## Server
 
-The first thing you'll need to do so IIS can host your server. scupPS already delivers a web.config which includes the required settings: 
+The first thing you'll need to do so IIS can host your server. 
+scupPS already delivers a web.config which includes the required settings: 
 ```xml
 <configuration>
   <location path="." inheritInChildApplications="false">
@@ -25,4 +26,4 @@ Once done, you can setup IIS in the normal way:
 * Setup a binding (something like HTTP on *:8080 - IP Address can be anything), SSL recommended
 
 ## IIS Authentication
-Setup Windows authentication on the IIS Website by going to the newly created Website in the IIS Manager, clicking Authentication and then enabled Windows Authentication and disable Anonymous Authentication.
+Setup Windows authentication on the IIS Website by going to the newly created Website in the IIS Manager, clicking Authentication and then enable Windows Authentication and disable Anonymous Authentication.
