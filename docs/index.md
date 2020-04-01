@@ -1,4 +1,5 @@
-{% include navigation.html}
+sidebar:
+  nav: "docs"
 
 # Welcome
 
