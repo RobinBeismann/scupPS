@@ -14,7 +14,7 @@ The Web UI is served by a bootstrap derived template called [AdminLTE](https://g
 
 ## Features
 
-* Completely built on PowerShell **Core** Version 7.0
+* Completely built on PowerShell Core Version 7.0
 * Support for native Single Sign On handled by the Internet Information Services (IIS) 
 * Listen on a single or multiple IP address/hostnames
 * Support for custom error pages
