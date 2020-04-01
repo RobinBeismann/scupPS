@@ -1,0 +1,34 @@
+Start-PodeServer -Threads 10 {
+    Add-PodeEndpoint -Address 127.0.0.1 -Protocol Http
+    
+    #View Engine
+    Set-PodeViewEngine -Type Pode
+
+    #Authentication 
+    Enable-PodeSessionMiddleware -Secret 'YourOwnLittleSecret' -Duration 120 -Extend
+    Add-PodeAuthIIS -Name 'IISAuth'
+    $IISAuth = Get-PodeAuthMiddleware -Name 'IISAuth'
+
+    #Logging
+    New-PodeLoggingMethod -File -Path ./logs -Name 'errors' -MaxSize "100MB" | Enable-PodeErrorLogging
+
+    #Routes
+    Add-PodeRoute -Method Get -Path '/' -Middleware $IISAuth -ScriptBlock {
+        param($Data)       
+        
+        Write-PodeViewResponse -Path 'index' -Data $Data
+    }
+
+    Add-PodeRoute -Method Get -Path '/page' -Middleware $IISAuth -ScriptBlock {
+        param($Data)       
+        
+        Write-PodeViewResponse -Path 'page' -Data $Data
+    }
+    
+    Add-PodeRoute -Method Get -Path '/api' -Middleware $IISAuth -ScriptBlock {
+        param($Data)       
+        
+        Write-PodeViewResponse -Path 'api' -Data $Data
+    }
+    
+}

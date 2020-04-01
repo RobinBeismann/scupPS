@@ -1,0 +1,18 @@
+<!-- Item Name: NavItemName -->
+
+<!-- ############################################### Includes ############################################# -->
+$( 
+    #Include Config
+    . ".\views\includes\core\config.ps1"
+    
+    #Include Includes    
+    Get-ChildItem -Path "views\includes\lib" -File -Include "*.ps1" -Recurse | ForEach-Object {
+        "<!-- Including: $($_.FullName) -->"
+        . $_.FullName
+    }
+)
+<!-- ############################################### Code ################################################# -->
+
+
+
+<!-- ############################################### End ################################################## -->

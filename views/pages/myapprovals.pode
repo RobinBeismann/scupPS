@@ -1,0 +1,255 @@
+<!-- Item Name: 'My Approvals (Pending)' -->
+<!-- Item Name: 'My Approvals (History)' Item Suburl: '&ShowApprovals=history' -->
+
+<!-- ############################################### Includes ############################################# -->
+$( 
+    #Include Config
+    . ".\views\includes\core\config.ps1"
+    . ".\views\includes\core\userLib.ps1"
+    
+    #Include Includes    
+    Get-ChildItem -Path "views\includes\lib" -File -Include "*.ps1" -Recurse | ForEach-Object {
+        "<!-- Including: $($_.FullName) -->"
+        . $_.FullName
+    }
+)
+<!-- ############################################### Code ################################################# -->
+<script type="text/javascript" >
+var url = '/api';
+
+var HttpClient = function() {
+this.get = function(aUrl, aCallback, requesttype) {
+        var anHttpRequest = new XMLHttpRequest();
+        anHttpRequest.onreadystatechange = function() { 
+            if (anHttpRequest.readyState == 4 && anHttpRequest.status == 200)
+                aCallback(anHttpRequest.responseText);
+        }
+        requesttype = "GET";
+        
+        anHttpRequest.open( requesttype, aUrl, true );            
+        anHttpRequest.send( null );
+    }
+}
+
+function escapeString(s1){
+    if (s1.length>0) {
+        var i,j;
+        var s2=escape(s1);
+        //Zeilenumbrueche verkuerzen
+        var a1=s2.split("%0D");
+        s2="";
+        for (i=0;i<a1.length;i++) {
+          s1=a1[i];
+          if (s1.substring(0,3)=="%0A") { s1=s1.substring(3,s1.length); }
+          s2+="%0D"+s1;
+        }
+        s2=s2.substring(3,s2.length);
+        //Leerzeichen ohne Code
+        var a2=s2.split("%20");
+        s2="";
+        for (i=0;i<a2.length;i++) { s1=a2[i]; s2+=" "+s1;}
+        s2=s2.substring(1,s2.length);
+        console.log(s2);
+        return(s2);
+    }
+}
+
+function handleRequest(requestAction,requestID,userFirstname,userLastname,userMail,softwareTitle,machine,approverFirstname,approverLastname,approverMail) {
+
+    var suburl = (url + '?operation=' + requestAction + 
+                    '&submitrequestid=' + requestID );
+                  
+    var client = new HttpClient();
+    
+    if(requestAction == "denyrequest" | requestAction == "revokerequest"){
+        reason = window.prompt("Please enter the reason:");
+        suburl = suburl + '&submitdenyreason='  + reason;
+    }
+
+    console.log(suburl);
+
+    client.get( suburl, function(response) {
+        alert(response);                
+    }, "POST");
+
+    document.getElementById('btn_approve_' + requestID).disabled = true;
+    document.getElementById('btn_deny_' + requestID).disabled = true;
+    //document.location.reload();            
+}
+
+</script>
+
+$(
+    if(
+        $authenticatedUser -and 
+        ($userIsCostCenterManager -or $userIsAdmin)
+    ){ 
+    
+        "<br/><br/>"
+        
+        $costCentersByUser = @{}
+        $userCMRessource = @{}
+        $userCMApplications = @{}
+
+        '<style type="text/css">
+        .tg  {border-collapse:collapse;border-spacing:0;}
+        .tg td{font-family:Arial, sans-serif;font-size:14px;padding:10px 5px;border-style:solid;border-width:1px;overflow:hidden;word-break:normal;border-color:black;}
+        .tg th{font-family:Arial, sans-serif;font-size:14px;font-weight:normal;padding:10px 5px;border-style:solid;border-width:1px;overflow:hidden;word-break:normal;border-color:black;}
+        .tg .tg-0lax{text-align:left;vertical-align:top}
+        </style>
+        '
+
+        $ShowApprovals = $Data.Query['ShowApprovals']        
+        if($ShowApprovals -ne "history"){
+            $queryAddition = "where CurrentState='1' and CurrentState!='2'"
+        }else{        
+            $queryAddition = "where CurrentState!='1' and CurrentState!='2'"
+        }
+
+        #Get approval requests
+        $openRequests = Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "Select * From SMS_UserApplicationRequest $queryAddition"
+        $managedRequests = @()
+
+        #Process
+        $openRequests | ForEach-Object {
+            if(
+                #Check if we already got the costcenter for this user
+                !($userCostcenter = $costCentersByUser[$_.User]) -or
+                !($userCMRessource[$_.User])
+            ){
+                #No -> Get the current costcenter out of SCCM            
+                $costCentersByUser[$_.User] = $cmRessource.$($Attribute_costCenter)
+
+                #Slow: $userCMRessource[$_.User] = Get-CMResource -ResourceId (Get-CMUser -Name $_.User | Select-Object -ExpandProperty ResourceID) -Fast
+                $doubleBackslashUsername = $_.User.Replace("\","\\")
+                $userCMRessource[$_.User] = Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "select * from sms_r_user where UniqueUserName='$doubleBackslashUsername'"
+                $userCostcenter = $userCMRessource[$_.User].$($Attribute_costCenter)
+            }
+        
+            #Check if our current user is responsible for this users' costcenter
+            if($managedCostCenters.Contains($userCostcenter) -or $userIsAdmin){
+                #Yes he is -> Add this request to his table
+                if(!($userCMApplications[$_.Modelname])){
+                    $userCMApplications[$_.Modelname] = Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "select * from SMS_Application where ModelName='$($_.Modelname)' AND IsLatest = 1"
+                }
+                $managedRequests += $_
+            }
+        }
+        
+        #Build request table
+        '
+        <table class="table table-responsive">
+            <tr>
+            <th>User</th>
+            <th>Costcenter</th>
+            <th>E-Mail Address</th>
+            <th>Software</th>
+            <th>Current Machine</th>
+            <th>Price/Alternatives</th>
+            <th>Comment</th>
+            <th>Action</th>
+            </tr>
+        '
+
+        if(!$ShowApprovals -or $ShowApprovals -ne "history"){
+
+            $managedRequests | ForEach-Object {
+                $cmRessource = $userCMRessource[$_.User]
+                "<tr>
+                    <td scope='col'>$($cmRessource.FullUserName)</td>
+                    <td scope='col'>$($cmRessource.$Attribute_costCenter)</td>
+                    <td scope='col'><a href='mailto:$($cmRessource.Mail)'>$($cmRessource.Mail)</a></td>
+                    <td scope='col'>$($_.Application)</td>
+                    <td scope='col'>$($_.RequestedMachine)</td>
+                    <td scope='col'>$(Replace-HTMLVariables($userCMApplications[$_.Modelname].LocalizedDescription))</td>
+                    <td scope='col'>$($_.Comments)</td>
+                    <td scope='col'>
+                        <button id='btn_approve_$($_.RequestGuid)' name='btn_approve' class='btn btn-primary' onclick='handleRequest(`"approverequest`",`"$($_.RequestGuid)`"`)'>Approve</button>
+                        <button id='btn_deny_$($_.RequestGuid)' name='btn_deny' class='btn btn-primary' onclick='handleRequest(`"denyrequest`",`"$($_.RequestGuid)`")'>Deny</button>
+                    </td>
+                </tr>
+                "
+            }
+            '</table><br/>'
+        }else{
+            #Build history request table
+            $managedRequests | ForEach-Object {
+                $cmRessource = $userCMRessource[$_.User]
+                "<tr>
+                    <td scope='col'>$($cmRessource.FullUserName)</td>
+                    <td scope='col'>$($cmRessource.$Attribute_costCenter)</td>
+                    <td scope='col'><a href='mailto:$($cmRessource.Mail)'>$($cmRessource.Mail)</a></td>
+                    <td scope='col'>$($_.Application)</td>
+                    <td scope='col'>$($_.RequestedMachine)</td>
+                    <td scope='col'>$(Replace-HTMLVariables($userCMApplications[$_.Modelname].LocalizedDescription))</td>
+                    <td scope='col'>$($_.Comments)</td>
+                    <td scope='col'>
+                    <button id='btn_approve_$($_.RequestGuid)' name='btn_approve' class='btn btn-primary' onclick='handleRequest(`"approverequest`",`"$($_.RequestGuid)`"`)'>Approve</button>
+                        
+                        $(
+                            #Check if this request is already approved
+                            if($_.CurrentState -eq 4){
+                                #Switch to revoke
+                                $btnAction = "revokerequest"
+                                $btnDescription = "Revoke"
+                                #Disable approve button
+                                "<script type='text/javascript'>document.getElementById('btn_approve_$($_.RequestGuid)').disabled = true;</script>"
+                            }else{
+                                $btnAction = "denyrequest"
+                                $btnDescription = "Deny"
+                            }
+                        )
+                        <button id='btn_deny_$($_.RequestGuid)' name='btn_deny' class='btn btn-primary' onclick='handleRequest(`"$($btnAction)`",`"$($_.RequestGuid)`")'>$btnDescription</button>
+                        
+                        $(
+                            #Set Deny button to disabled if request is not approved
+                            if($_.CurrentState -ne 4){
+                                "<script type='text/javascript'>document.getElementById('btn_deny_$($_.RequestGuid)').disabled = true;</script>"
+                            }
+                        )                
+                    </td>
+                </tr>
+                "
+
+            
+            }
+            '</table><br/>'
+        }
+    }else{
+        $doubleBackslashUsername = $authenticatedUser.UniqueUserName.Replace("\","\\")
+        #Get approval requests
+        $managedRequests = Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "Select * From SMS_UserApplicationRequest WHERE User = '$doubleBackslashUsername'"
+        
+        #Build request table
+        '
+        <table class="table table-responsive">
+            <tr>
+            <th>Software</th>
+            <th>Current Machine</th>
+            <th>Price/Alternatives</th>
+            <th>Comment</th>
+            </tr>
+        '
+
+        $userCMApplications = @{}
+        $managedRequests | ForEach-Object {
+            if(!($userCMApplications[$_.Modelname])){
+                $userCMApplications[$_.Modelname] = Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "select * from SMS_Application where ModelName='$($_.Modelname)' AND IsLatest = 1"
+            }
+        }
+
+        $managedRequests | ForEach-Object {
+            "<tr>
+                <td scope='col'>$($_.Application)</td>
+                <td scope='col'>$($_.RequestedMachine)</td>
+                <td scope='col'>$(Replace-HTMLVariables($userCMApplications[$_.Modelname].LocalizedDescription))</td>
+                <td scope='col'>$($_.Comments)</td>
+            </tr>
+            "
+        }
+        '</table><br/>'
+        
+    }
+    
+)
+<!-- ############################################### End ################################################## -->

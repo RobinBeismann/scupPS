@@ -1,0 +1,50 @@
+<!-- Item Name: 'My Users' -->
+
+<!-- ############################################### Includes ############################################# -->
+$( 
+    #Include Config
+    . ".\views\includes\core\config.ps1"
+    . ".\views\includes\core\userLib.ps1"
+    
+    #Include Includes    
+    Get-ChildItem -Path "views\includes\lib" -File -Include "*.ps1" -Recurse | ForEach-Object {
+        "<!-- Including: $($_.FullName) -->"
+        . $_.FullName
+    }
+)
+<!-- ############################################### Code ################################################# -->
+
+$(
+    if(
+        ($authenticatedUser) -and
+        ($managedCostCenters = $authenticatedUser.$Attribute_managedcostCenters) -and 
+        ($managedCostCenters -ne $null) -and 
+        ($managedCostCenters -ne "")    
+    ){
+        $managedCostCenters = $managedCostCenters.Split(";")
+
+        "You are managing the cost center of:</br><br/>"
+        
+        #Build where clause
+        $queryAddition = ""
+        $managedCostCenters | ForEach-Object {
+            if($queryAddition -eq ""){
+                $queryAddition += "AND $Attribute_costCenter='$_'"
+            }else{
+                $queryAddition += " or $Attribute_costCenter='$_'"
+            }
+        }
+        if($userIsAdmin){
+            $queryAddition = $null
+        }
+
+        Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "select * from sms_r_user where $Attribute_costCenter IS NOT NULL $queryAddition" | ForEach-Object {
+            "$($_.FullUserName) ($($_.$Attribute_costCenter))<br/>"
+        }
+
+    }else{
+        "You don't have any costcenters to manage."
+    }
+)
+
+<!-- ############################################### End ################################################## -->

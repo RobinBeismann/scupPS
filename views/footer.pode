@@ -1,0 +1,20 @@
+﻿$( 
+    #Include Config
+    . ".\views\includes\core\config.ps1"
+)
+      <!-- Main Footer -->
+      <footer class="main-footer">
+        <!-- Default to the left -->
+        $siteCopyrightText        
+      </footer>
+    </div>
+    <!-- ./wrapper -->
+
+    <!-- REQUIRED SCRIPTS -->
+
+    <!-- Bootstrap 4 -->
+    <script src="assets/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <!-- AdminLTE App -->
+    <script src="assets/AdminLTE/js/adminlte.min.js"></script>
+  </body>
+</html>

@@ -1,0 +1,30 @@
+<!-- Item Name: 'Approval Admins' -->
+
+<!-- ############################################### Includes ############################################# -->
+$( 
+    #Include Config
+    . ".\views\includes\core\config.ps1"
+    . ".\views\includes\core\userLib.ps1"
+    
+    #Include Includes    
+    Get-ChildItem -Path "views\includes\lib" -File -Include "*.ps1" -Recurse | ForEach-Object {
+        "<!-- Including: $($_.FullName) -->"
+        . $_.FullName
+    }
+)
+<!-- ############################################### Code ################################################# -->
+
+$(
+    if($UserIsAdmin){
+
+    "The following users can use the administrative portal:"
+    $doubleEscapedGroupName = $Group_PortalAdmins.Replace("\","\\")
+    Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "SELECT * FROM SMS_R_User where UserGroupName = '$doubleEscapedGroupName'" | ForEach-Object {
+        "<br/>$($_.FullUserName)"
+    }
+
+    }else{
+        "You don't have any costcenters to manage."
+    }
+)
+<!-- ############################################### End ################################################## -->

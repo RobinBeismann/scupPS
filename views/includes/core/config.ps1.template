@@ -1,0 +1,35 @@
+
+#Site Settings
+$siteTitle = "User Portal"
+
+$siteCopyrightText = 'Copyright &copy; 2020 <a href="https://robin-beismann.com">Robin Beismann</a>.'
+
+#SMTP Settings
+$smtpServer = "smtp.contoso.com"
+$smtpSender = "%SenderDisplayName% <it-support-noreply@contoso.com>"
+$smtpReplyTo = "it-support@contoso.com"
+
+#Attributes
+$Attribute_costCenter = "extensionattribute12" #Holds the plaintext costcenter
+$Attribute_managedcostCenters = "extensionattribute5" #Holds the managed costcenters delimited by semicola - for example "10000;10005" 
+
+#Numerous Collections
+$Collection_Windows10Clients = "All Windows 10 Systems"
+$Collection_Windows7Clients = "All Windows 7 Systems"
+
+#Collections which are browsable by the client detail/summary pages
+$Collection_BrowsingAllowed  = $Collection_Windows10Clients, $Collection_Windows7Clients
+
+#Groups
+$Group_PortalAdmins = "CONTOSO\S-SCCM-AppPortal-Admins"
+
+#SCCM Site Name
+$SiteName="ABC"
+#SCCM Server Name
+$SCCMServer="SCCM1"
+#SCCM Namespace
+$SCCMNameSpace="root\sms\site_$($SiteName)"
+
+#Admin Inform Mail
+$smtpAdminRecipient = "info@contoso.com"
+$smtpSignature = "IT Support"

@@ -1,0 +1,118 @@
+﻿$( 
+    #Include Config
+    . ".\views\includes\core\config.ps1"
+    . ".\views\includes\core\menuItems.ps1"
+    . ".\views\includes\core\userLib.ps1"  
+)
+<!-- ############################################### Header ############################################### -->
+<body class="hold-transition sidebar-mini">
+    <div class="wrapper">
+      <!-- Navbar -->
+      <nav class="main-header navbar navbar-expand navbar-white navbar-light">
+        <!-- Right navbar links -->
+        <ul class="navbar-nav ml-auto">
+          <!-- Messages Dropdown Menu -->
+          <li class="nav-item">
+            <div class="user-panel d-flex">
+                <!--
+                <div class="image">
+                <img
+                  src="assets/AdminLTE/img/user2-160x160.jpg"
+                  class="img-circle elevation-2"
+                  alt="User Image"
+                />
+                </div>
+                -->
+                <div class="info" id="authenticationLabel">
+                <span class="brand-text font-weight-light">
+                <a href="#" class="d-block">
+                $(
+                    if($Data.Auth.User.Name){
+                        if($userIsAdmin){
+                            "Logged in as $($Data.Auth.User.Name) (Portal Admin)"
+                        }else{
+                            "Logged in as $($Data.Auth.User.Name)"
+                        }
+                    }else{
+                        "Not authenticated!"
+                    }
+                )
+                </a>
+                </span>
+              </div>
+            </div>
+          </li>
+        </ul>
+      </nav>
+      <!-- /.navbar -->
+
+
+    <!-- Main Sidebar Container -->
+    <aside class="main-sidebar sidebar-dark-primary elevation-4">
+    <!-- Brand Logo -->
+    
+    <a href="#" class="brand-link">
+    <!--
+        <img
+        src="assets/AdminLTE/img/AdminLTELogo.png"
+        alt="AdminLTE Logo"
+        class="brand-image img-circle elevation-3"
+        style="opacity: .8"
+        />
+    -->
+        <span class="brand-text font-weight-light">$siteTitle</span>
+    </a>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <!-- Sidebar Menu -->
+        <nav class="mt-2">
+        <ul
+            class="nav nav-pills nav-sidebar flex-column"
+            data-widget="treeview"
+            role="menu"
+            data-accordion="false"
+        >
+        <!-- Add icons to the links using the .nav-icon class
+        with font-awesome or any other icon font library -->
+        <li class="nav-item has-treeview menu-open">
+            <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+            <span>User Area</span>
+            </h6>
+
+            $(
+                $Data.menuItems.GetEnumerator() | Where-Object { $_.Value -notlike "admin-*" } | ForEach-Object {         
+                    "                        
+                    <li class=`"nav-item`">
+                        <a id=`"nav-$($_.Value)`" href=`"?page=$($_.Value)`" class=`"nav-link`">
+                            <i class=`"nav-icon`"></i>
+                            <p>$($_.Name)</p>
+                        </a>
+                    </li>
+                    "
+                }
+            )
+            
+            $(
+                if($userIsAdmin){
+                    '<h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                    <span>Administrative</span>
+                    </h6>'
+                    $Data.menuItems.GetEnumerator() | Where-Object { $_.Value -like "admin-*" } | ForEach-Object {         
+                        "                        
+                        <li class=`"nav-item`">
+                            <a id=`"nav-$($_.Value)`" href=`"?page=$($_.Value)`" class=`"nav-link`">
+                                <i class=`"nav-icon`"></i>
+                                <p>$($_.Name)</p>
+                            </a>
+                        </li>
+                        "
+                    }
+                }
+            )      
+        </li> 
+        </ul>
+        </nav>
+        <!-- /.sidebar-menu -->
+        </div>
+        <!-- /.sidebar -->
+    </aside>

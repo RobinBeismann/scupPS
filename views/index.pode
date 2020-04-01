@@ -1,0 +1,72 @@
+<!-- ############################################### Includes ############################################# -->
+$( 
+    #Include Config
+    . ".\views\includes\core\menuItems.ps1"
+    . ".\views\includes\core\userLib.ps1"
+    
+)
+<!-- ############################################### Header ############################################### -->
+$( 
+    
+    #Include Header
+    Use-PodePartialView -Path header -Data $Data
+    Use-PodePartialView -Path nav -Data $Data
+
+)
+<!-- ############################################### Main ################################################# -->
+
+<!-- Content Wrapper. Contains page content -->
+<div class="content-wrapper">
+  <!-- Main content -->
+  <div class="content">
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col">
+          <div class="card">
+            <div class="card-body">
+              <p class="card-text">
+                <div class="row justify-content-center">
+                    <div class="col-auto" id="content_div">
+                    </div>
+                </div>
+              </p>
+            </div>
+          </div>
+          <!-- /.card -->
+        </div>
+        <!-- /.col-md-6 -->
+      </div>
+      <!-- /.row -->
+    </div>
+    <!-- /.container-fluid -->
+  </div>
+  <!-- /.content -->
+</div>
+<!-- /.content-wrapper -->
+
+
+<script type="text/javascript">
+//Load the main page content using javascript
+`$('#content_div').html('Loading page..'); // Show "Loading page..."
+// Do an ajax request
+`$.ajax({
+    url: "page$(      
+        $queryString = $null
+        $Data.Query.GetEnumerator() | ForEach-Object {
+            if(!$queryString){
+                $queryString = "?$($_.Name)=$($_.Value)"
+            }else{        
+                $queryString = $queryString + "&$($_.Name)=$($_.Value)"
+            }
+        }
+        $queryString
+      )"
+  }).done(function(data) { 
+    `$('#content_div').html(data); // display data
+});
+
+</script>
+<!-- ############################################### Footer ############################################### -->
+$( Use-PodePartialView -Path footer )
+
+
