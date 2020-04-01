@@ -1,6 +1,8 @@
 {% include navigation.html%}
 
-# List Client Details
+# Helpdesk Functions
+The following functions are available for the helpdesk, controlled by the scupPS Admin Group which is configured in the config.ps1
+
 ## **List Client Details** 
 View a hardware summary of a client (Manufacturer, Model, Serialnumber, Name, Domain, Memory, Disks and Config Manager Client details)
 
