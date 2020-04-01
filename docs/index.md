@@ -43,5 +43,5 @@ The Web UI is served by a bootstrap derived template called [AdminLTE](https://g
 
 ## Quick Look!
 
-[![GetStarted (Application Approval Workflow)](https://img.shields.io/badge/-Get%20Started!-green.svg?longCache=true&style=for-the-badge)](./Look-and-Feel/Approval-Workflow)
-[![GetStarted (Helpdesk Functions)](https://img.shields.io/badge/-Get%20Started!-green.svg?longCache=true&style=for-the-badge)](./Look-and-Feel/Helpdesk)
+[![GetStarted (Application Approval Workflow)](https://img.shields.io/badge/-Get%20Started%20(Approval%20Workflow)!-green.svg?longCache=true&style=for-the-badge)](./Look-and-Feel/Approval-Workflow)
+[![GetStarted (Helpdesk Functions)](https://img.shields.io/badge/-Get%20Started%20(Helpdesk%20Functions)!-green.svg?longCache=true&style=for-the-badge)](./Look-and-Feel/Helpdesk)
