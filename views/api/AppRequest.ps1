@@ -145,7 +145,7 @@ if(
             $userText = Replace-HTMLVariables -Value $userText 
 
             if($requestorMail){
-                Send-CustomMailMessage -SmtpServer $smtpServer -from $localSender -ReplyTo $smtpReplyTo -subject "Application Approval revoked" -to ($requestorMail,$approverMail) -CC $licensingContact -body $userText -BodyAsHtml
+                Send-CustomMailMessage -SmtpServer $smtpServer -from $localSender -ReplyTo $smtpReplyTo -subject "Application Approval approved" -to ($requestorMail,$approverMail) -CC $licensingContact -body $userText -BodyAsHtml
             }   
         
         }else{
