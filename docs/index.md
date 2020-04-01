@@ -31,12 +31,12 @@ The Web UI is served by a bootstrap derived template called [AdminLTE](https://g
   * **Admin View**
     * See all requests and approve, deny or revoke them
 * **Helpdesk Functions**
-  * List Client Details: View a hardware summary of a client (Manufacturer, Model, Serialnumber, Name, Domain, Memory, Disks and Config Manager Client details)
-  * List Computers: View computers, their primary user, last activity, last AD Site and the last logged on User per Collection
-  * List Computer Summary: View a list of device models sorted by count
-  * List Software: View installed Updates of a client
-  * List Task Sequence Status: View the status of currently running or recently run task sequences
-  * List Updates: View installed Software on a client
+  * **List Client Details**: View a hardware summary of a client (Manufacturer, Model, Serialnumber, Name, Domain, Memory, Disks and Config Manager Client details)
+  * **List Computers**: View computers, their primary user, last activity, last AD Site and the last logged on User per Collection
+  * **List Computer Summary**: View a list of device models sorted by count
+  * **List Software**: View installed Updates of a client
+  * **List Task Sequence Status**: View the status of currently running or recently run task sequences
+  * **List Updates**: View installed Software on a client
 
 
 ## Quick Look!
