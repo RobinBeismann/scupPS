@@ -22,6 +22,15 @@ The Web UI is served by a bootstrap derived template called [AdminLTE](https://g
 * Multi-thread support for incoming requests
 * Ability to allow/deny requests from certain IP addresses and subnets
 * No own datasource / database: Pulls all informations from MEMCM/SCCM and uses native capabilities
+* * **MEMCM / SCCM Support**
+  * Supports all MEMCM/SCCM Versions starting from 1906
+  * Tested on:
+    * MEMCM 2002
+    * MEMCM 1910
+    * SCCM 1906
+  * Limited functionality:
+    * SCCM 1902
+  * Works no matter if the Feature "Approve application requests for users per device" is enabled or not
 * **Application Approval Workflow**
   * *Supports all Application Model based Apps in MEMCM/SCCM*
   * **Manager View**
