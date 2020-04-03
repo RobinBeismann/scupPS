@@ -117,7 +117,7 @@ if(
         $userText = Replace-HTMLVariables -Value $userText
 
         if($requestorMail){
-            Send-CustomMailMessage -SmtpServer $smtpServer -from $localSender -ReplyTo $smtpReplyTo -subject $mailSubject -to ($requestorMail,$approverMail) -CC $licensingContact -body $userText -BodyAsHtml
+            Send-CustomMailMessage -SmtpServer $smtpServer -from $localSender -ReplyTo $smtpReplyTo -subject $mailSubject -to ($requestorMail,$approverMail) -CC $smtpAdditionalRecipient -body $userText -BodyAsHtml
         }
     }
 

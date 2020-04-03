@@ -16,6 +16,8 @@ $smtpReplyTo = "it-support@contoso.com"
 $smtpAdminRecipient = "info@contoso.com"
 # The Mail signature used by the mail sending pages
 $smtpSignature = "IT Support"
+# Additional Mail Recipient which is added to all mails, comment in if required
+#$smtpAdditionalRecipient = "licensing@contoso.com"
 
 ####### Attributes
 # This AD Attribute holds the plain costcenter of a user like '10001' 
