@@ -22,6 +22,13 @@ if(
     $reqObjRequestor = Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "Select * From SMS_R_USER where Sid='$($reqObj.UserSid)'"
     $reqObjApprover = $authenticatedUser
     $reqObjOO = [wmi]"\\$SCCMServer\$($SCCMNameSpace):SMS_UserApplicationRequest.RequestGuid=`"$requestId`"" #Object for object oriented calls
+    
+    #Check if requestor has the competence to approve requests for this costcenter
+    if(!(Test-ApproveCompetence -User $reqObjRequestor -Manager $reqObjApprover)){
+        "You're not allowed to approve this request!"
+        #Remove the operation so we're not continuing
+        $operation = $null
+    }
 
     #Requestor Information
     $requestorFirstname = $reqObjRequestor.givenName

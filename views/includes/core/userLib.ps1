@@ -25,3 +25,16 @@ if(
 }else{
     $managedCostCenters = $null
 }
+
+function Test-ApproveCompetence($Manager,$User){
+    if(
+        ($userCostcenter = $User.$Attribute_costCenter) -and 
+        ($managerCostcenters = $Manager.$Attribute_managedcostCenters)
+    ){
+        $managerCostcenters = $managerCostcenters.Split(";")
+        if($userCostcenter -in $managerCostcenters){
+            return $true
+        }
+    }
+    return $false
+}
