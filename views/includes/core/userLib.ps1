@@ -32,7 +32,10 @@ function Test-ApproveCompetence($Manager,$User){
         ($managerCostcenters = $Manager.$Attribute_managedcostCenters)
     ){
         $managerCostcenters = $managerCostcenters.Split(";")
-        if($userCostcenter -in $managerCostcenters){
+        if(
+            ($userCostcenter -in $managerCostcenters) -or
+            ($Group_PortalAdmins -in $Manager.UserGroupName)       
+        ){
             return $true
         }
     }
