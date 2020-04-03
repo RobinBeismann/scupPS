@@ -11,6 +11,7 @@ This portal on one hand offers a interface that builts upon the native SCCM Soft
     * SCCM 1906
   * Limited functionality:
     * SCCM 1902
+  * Works no matter if the Feature "Approve application requests for users per device" is enabled or not
 * **Application Approval Workflow**
   * *Supports all Application Model based Apps in MEMCM/SCCM*
   * **Manager View**
