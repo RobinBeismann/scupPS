@@ -22,7 +22,7 @@ The Web UI is served by a bootstrap derived template called [AdminLTE](https://g
 * Multi-thread support for incoming requests
 * Ability to allow/deny requests from certain IP addresses and subnets
 * No own datasource / database: Pulls all informations from MEMCM/SCCM and uses native capabilities
-* * **MEMCM / SCCM Support**
+* **MEMCM / SCCM Support**
   * Supports all MEMCM/SCCM Versions starting from 1906
   * Tested on:
     * MEMCM 2002
