@@ -11,86 +11,6 @@ $denyreason = $Data.Query.submitdenyreason
 
 $currentDate = [string](Get-Date -Format "yyyy\/MM\/dd hh:MM")
 
-$userText_Approval = 
-"
-German version below
----------------------------------------
-
-Dear %requestorDisplayNameV2%,
-
-your Costcenter Manager (%approverDisplayNameV2%) approved the application request for `"%softwareTitle%`", the software will be installed on your computer (%requestorMachine%) in the next minutes.
-
-For support please reply to this mail or ask your costcenter manager.
-
-Thanks and best regards
-$smtpSignature
-
----------------------------------------
-
-Hallo %requestorDisplayNameV2%,
-
-Ihr Kostenstellenverantwortlicher (%approverDisplayNameV2%) hat ihre Genehmigungsanfrage für die Anwendung `"%softwareTitle%`" genehmigt. Die Anwendung wird demnächst auf Ihrem Computer (%requestorMachine%) installiert.
-
-Sollten Sie hierbei Hilfe benötigen, antworten Sie einfach auf diese Mail oder fragen Sie ihren Kostenstellenverantwortlichen.
-
-Viele Grüße
-$smtpSignature"
-
-$userText_Denial = 
-"
-German version below
----------------------------------------
-
-Dear %requestorDisplayNameV2%,
-
-your Costcenter Manager (%approverDisplayNameV2%) denied the application request for `"%softwareTitle%`", the software will be uninstalled from your computer (%requestorMachine%) in the next minutes.
-The specified reason is: %denyreason%
-
-For support please reply to this mail or ask your costcenter manager.
-
-Thanks and best regards
-$smtpSignature
-
----------------------------------------
-
-Hallo %requestorDisplayNameV2%,
-
-Ihr Kostenstellenverantwortlicher (%approverDisplayNameV2%) hat die Genehmigung für die Anwendung `"%softwareTitle%`" abgelehnt. Die Anwendung wird demnächst von Ihrem Computer (%requestorMachine%) deinstalliert.
-Die angegebene Begründung lautet: %denyreason%
-
-Sollten Sie hierbei Hilfe benötigen, antworten Sie einfach auf diese Mail oder fragen Sie ihren Kostenstellenverantwortlichen.
-
-Viele Grüße
-$smtpSignature"
-
-$userText_Revoke = 
-"
-German version below
----------------------------------------
-
-Dear %requestorDisplayNameV2%,
-
-your Costcenter Manager (%approverDisplayNameV2%) revoked the application approval for `"%softwareTitle%`", the software will be uninstalled from your computer (%requestorMachine%) in the next minutes.
-The specified reason is: %denyreason%
-
-For support please reply to this mail or ask your costcenter manager.
-
-Thanks and best regards
-$smtpSignature
-
----------------------------------------
-
-Hallo %requestorDisplayNameV2%,
-
-Ihr Kostenstellenverantwortlicher (%approverDisplayNameV2%) hat die Genehmigung für die Anwendung `"%softwareTitle%`" zurückgerufen. Die Anwendung wird demnächst von Ihrem Computer (%requestorMachine%) deinstalliert.
-Die angegebene Begründung lautet: %denyreason%
-
-Sollten Sie hierbei Hilfe benötigen, antworten Sie einfach auf diese Mail oder fragen Sie ihren Kostenstellenverantwortlichen.
-
-Viele Grüße
-$smtpSignature"
-
-
 $localSender = $smtpSender.Replace("%SenderDisplayName%","$approverDisplayNameV1 (Approval Portal)")
 
 if(
@@ -119,6 +39,7 @@ if(
 
     $softwareTitle = $reqObj.Application
     $requestorMachine = $reqObj.RequestedMachine
+    $mailTemplate = $null
 
     if($operation -eq "approverequest"){
 
@@ -129,25 +50,9 @@ if(
             }catch{
                 $_
             }
-            $userText = $userText_Approval
-            $userText = $userText.Replace("%requestorDisplayNameV1%",$requestorDisplayNameV1)
-            $userText = $userText.Replace("%requestorDisplayNameV2%",$requestorDisplayNameV2)
-            $userText = $userText.Replace("%requestorFirstname%",$requestorFirstname)
-            $userText = $userText.Replace("%requestorLastname%",$requestorLastname)
-            $userText = $userText.Replace("%requestorMail%",$requestorMail)
-            $userText = $userText.Replace("%approverDisplayNameV1%",$approverDisplayNameV1)
-            $userText = $userText.Replace("%approverDisplayNameV2%",$approverDisplayNameV2)
-            $userText = $userText.Replace("%approverFirstname%",$approverFirstname)
-            $userText = $userText.Replace("%approverLastname%",$approverLastname)
-            $userText = $userText.Replace("%approverMail%",$approverMail)
-            $userText = $userText.Replace("%softwareTitle%",$softwareTitle)
-            $userText = $userText.Replace("%requestorMachine%",$requestorMachine)
-            $userText = Replace-HTMLVariables -Value $userText 
-
-            if($requestorMail){
-                Send-CustomMailMessage -SmtpServer $smtpServer -from $localSender -ReplyTo $smtpReplyTo -subject "Application Approval approved" -to ($requestorMail,$approverMail) -CC $licensingContact -body $userText -BodyAsHtml
-            }   
-        
+            
+            $mailTemplate = "approval.mailtemplate.html"    
+            $mailSubject = "Application Approval granted"   
         }else{
             "An error occured while receiving request data."
         }
@@ -162,24 +67,8 @@ if(
                 $_
             }
 
-            $userText = $userText_Denial
-            $userText = $userText.Replace("%requestorDisplayNameV1%",$requestorDisplayNameV1)
-            $userText = $userText.Replace("%requestorDisplayNameV2%",$requestorDisplayNameV2)
-            $userText = $userText.Replace("%requestorFirstname%",$requestorFirstname)
-            $userText = $userText.Replace("%requestorLastname%",$requestorLastname)
-            $userText = $userText.Replace("%requestorMail%",$requestorMail)
-            $userText = $userText.Replace("%approverDisplayNameV1%",$approverDisplayNameV1)
-            $userText = $userText.Replace("%approverDisplayNameV2%",$approverDisplayNameV2)
-            $userText = $userText.Replace("%approverFirstname%",$approverFirstname)
-            $userText = $userText.Replace("%approverLastname%",$approverLastname)
-            $userText = $userText.Replace("%approverMail%",$approverMail)
-            $userText = $userText.Replace("%softwareTitle%",$softwareTitle)
-            $userText = $userText.Replace("%requestorMachine%",$requestorMachine)
-            $userText = $userText.Replace("%denyreason%",$denyreason)
-
-            $userText = Replace-HTMLVariables -Value $userText 
-            
-            Send-CustomMailMessage -SmtpServer $smtpServer -from $localSender -ReplyTo $smtpReplyTo -subject "Application Request denied" -to ($requestorMail,$approverMail) -CC $licensingContact -body $userText -BodyAsHtml
+            $mailTemplate = "denied.mailtemplate.html"
+            $mailSubject = "Application Approval denied" 
         }else{
             "An error occured while receiving request data."
         }
@@ -194,28 +83,34 @@ if(
                 $_
             }
 
-            $userText = $userText_Revoke
-            $userText = $userText.Replace("%requestorDisplayNameV1%",$requestorDisplayNameV1)
-            $userText = $userText.Replace("%requestorDisplayNameV2%",$requestorDisplayNameV2)
-            $userText = $userText.Replace("%requestorFirstname%",$requestorFirstname)
-            $userText = $userText.Replace("%requestorLastname%",$requestorLastname)
-            $userText = $userText.Replace("%requestorMail%",$requestorMail)
-            $userText = $userText.Replace("%approverDisplayNameV1%",$approverDisplayNameV1)
-            $userText = $userText.Replace("%approverDisplayNameV2%",$approverDisplayNameV2)
-            $userText = $userText.Replace("%approverFirstname%",$approverFirstname)
-            $userText = $userText.Replace("%approverLastname%",$approverLastname)
-            $userText = $userText.Replace("%approverMail%",$approverMail)
-            $userText = $userText.Replace("%softwareTitle%",$softwareTitle)
-            $userText = $userText.Replace("%requestorMachine%",$requestorMachine)
-            $userText = $userText.Replace("%denyreason%",$denyreason)
-
-            $userText = Replace-HTMLVariables -Value $userText 
-            
-            if($requestorMail){
-                Send-CustomMailMessage -SmtpServer $smtpServer -from $localSender -ReplyTo $smtpReplyTo -subject "Application Approval revoked" -to ($requestorMail,$approverMail) -CC $licensingContact -body $userText -BodyAsHtml
-            }
+            $mailTemplate = "revoke.mailtemplate.html"
+            $mailSubject = "Application Approval revoked"   
         }else{
             "An error occured while receiving request data."
+        }
+    }
+
+    if($mailSubject -and $mailTemplate -and $mailTemplate -ne ""){
+        
+        $userText = Get-Content -Path ".\public\Assets\templates\$mailTemplate" -Raw
+        $userText = $userText.Replace("%requestorDisplayNameV1%",$requestorDisplayNameV1)
+        $userText = $userText.Replace("%requestorDisplayNameV2%",$requestorDisplayNameV2)
+        $userText = $userText.Replace("%requestorFirstname%",$requestorFirstname)
+        $userText = $userText.Replace("%requestorLastname%",$requestorLastname)
+        $userText = $userText.Replace("%requestorMail%",$requestorMail)
+        $userText = $userText.Replace("%approverDisplayNameV1%",$approverDisplayNameV1)
+        $userText = $userText.Replace("%approverDisplayNameV2%",$approverDisplayNameV2)
+        $userText = $userText.Replace("%approverFirstname%",$approverFirstname)
+        $userText = $userText.Replace("%approverLastname%",$approverLastname)
+        $userText = $userText.Replace("%approverMail%",$approverMail)
+        $userText = $userText.Replace("%softwareTitle%",$softwareTitle)
+        $userText = $userText.Replace("%requestorMachine%",$requestorMachine)
+        $userText = $userText.Replace("%denyreason%",$denyreason)
+        $userText = $userText.Replace("%mailSignature%",$smtpSignature)
+        $userText = Replace-HTMLVariables -Value $userText
+
+        if($requestorMail){
+            Send-CustomMailMessage -SmtpServer $smtpServer -from $localSender -ReplyTo $smtpReplyTo -subject $mailSubject -to ($requestorMail,$approverMail) -CC $licensingContact -body $userText -BodyAsHtml
         }
     }
 
