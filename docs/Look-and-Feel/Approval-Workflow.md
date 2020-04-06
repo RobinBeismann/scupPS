@@ -32,9 +32,10 @@ The manager has the option to revoke a software approval which will trigger an u
 
 ![scupPS-1](https://raw.githubusercontent.com/RobinBeismann/scupPS/master/docs/images/scupPS_pendingRequest.png)
 
-## Approval Migration / Deletion
+## Approval Creation / Migration / Deletion
 The scupPS Admin Group can migrate Approvals from one machine to another, MEMCM will then trigger an installation of the Software on the new machine which addresses replacement of machines and get rids of the need to re-request all software titles.
 The Admin Group can also delete Approvals which were previously created, this might be handy if a machine completely changes it purpose or is handed to another employee.
+It is also possible to pre-create Approvals from scupPS.
 
 ## Mail Notifications
 The user will receive the following mails depending on the actions taken in the user portal.

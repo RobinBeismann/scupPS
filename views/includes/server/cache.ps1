@@ -115,6 +115,62 @@ Add-PodeSchedule -Name 'CacheApplications' -Cron '@hourly' -OnStart -ScriptBlock
     Save-PodeState -Path ".\states.json"
 }
 
+# Cache Machines
+Write-Host("Adding Scheduled Job to cache machines..")
+Add-PodeSchedule -Name 'CacheMachines' -Cron '@hourly' -OnStart -ScriptBlock {  
+    #Loading config.ps1
+    Write-Host("Server: Loading 'config.ps1'..")
+    . ".\views\includes\core\config.ps1"
+
+    function ConvertTo-Hashtable
+    {
+        param (
+            [Parameter(ValueFromPipeline)]
+            $InputObject
+        )
+    
+        process
+        {
+            if ($null -eq $InputObject) { return $null }
+    
+            if ($InputObject -is [System.Collections.IEnumerable] -and $InputObject -isnot [string])
+            {
+                $collection = @(
+                    foreach ($object in $InputObject) { ConvertTo-Hashtable $object }
+                )
+    
+                Write-Output -NoEnumerate $collection
+            }
+            elseif ($InputObject -is [psobject])
+            {
+                $hash = @{}
+    
+                foreach ($property in $InputObject.PSObject.Properties)
+                {
+                    if(!($property.Name.StartsWith("Cim"))){
+                        $hash[$property.Name] = ConvertTo-Hashtable $property.Value
+                    }
+                }
+    
+                $hash
+            }
+            else
+            {
+                $InputObject
+            }
+        }
+    }
+    
+    $machines = @{}
+    Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "SELECT * FROM SMS_R_SYSTEM" |  ForEach-Object {    
+        $machines.($_.Name) += ConvertTo-Hashtable -InputObject $_
+    }
+
+    Write-Host("Caching $($machines.Count) Machines..")
+    Set-PodeState -Name "cache_Machines" -Value $machines
+    Save-PodeState -Path ".\states.json"
+}
+
 # Cache Navigation Bar
 Write-Host("Adding Scheduled Job to rebuild the Navigation Bar once per hour and initially at the start..")
 Add-PodeSchedule -Name 'CacheNavbar' -Cron '@hourly' -OnStart -ScriptBlock { 
