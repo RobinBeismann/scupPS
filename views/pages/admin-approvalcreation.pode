@@ -1,0 +1,206 @@
+<!-- Item Name: 'Approval Creation' -->
+
+<!-- ############################################### Includes ############################################# -->
+$( 
+    #Include Config
+    . ".\views\includes\core\config.ps1"
+    . ".\views\includes\core\userLib.ps1"
+    
+    #Include Includes    
+    Get-ChildItem -Path "views\includes\lib" -File -Include "*.ps1" -Recurse | ForEach-Object {
+        "<!-- Including: $($_.FullName) -->"
+        . $_.FullName
+    }
+)
+<!-- ############################################### Code ################################################# -->
+
+
+<script type="text/javascript">
+var url = '/api';
+
+var HttpClient = function() {
+this.get = function(aUrl, aCallback, requesttype) {
+        var anHttpRequest = new XMLHttpRequest();
+        anHttpRequest.onreadystatechange = function() { 
+            if (anHttpRequest.readyState == 4 && anHttpRequest.status == 200)
+                aCallback(anHttpRequest.responseText);
+        }
+        requesttype = "GET";
+        
+        anHttpRequest.open( requesttype, aUrl, true );            
+        anHttpRequest.send( null );
+    }
+}
+
+function calculate(){
+    var machine = document.getElementById('machine').value;
+    var user = document.getElementById('user').value;
+    var application = document.getElementById('application').value;
+    `$('#existing_approvals').html('Retrieving approvals, please wait.');
+    if(
+        (machine != "notset") && 
+        (machine != "") &&
+        (user != "") &&
+        (user != "notset") &&
+        (application != "") &&
+        (application != "notset")
+    ){                
+        var client = new HttpClient();
+        var suburl = (url + '?operation=approvalcreationpreview' + 
+                        '&submitrequestmachine=' + machine + 
+                        '&submitrequestapplication=' + application + 
+                        '&submitrequestuser=' + user
+                        );
+                        
+        client.get( suburl, function(response) {
+                if(response && response != ""){                       
+                    `$('#existing_approvals').html(response);
+                    document.getElementById("submitmigration").disabled=true;
+                }else{
+                    `$('#existing_approvals').html('Approval currently not existent, ready to create.');
+                    document.getElementById("submitmigration").disabled=false;
+                }           
+        }, "GET");
+    }else{
+        `$('#existing_approvals').html('Please select both devices to show existing approvals.');
+        document.getElementById("submitmigration").disabled=false;
+    }
+}
+
+function submitData(){
+    var oldmachine = document.getElementById('oldmachine').value;
+    var newmachine = document.getElementById('newmachine').value;
+    `$('#existing_approvals').html('Migrating approvals, please wait..');
+
+    if(
+        (oldmachine != "notset") && 
+        (oldmachine != "") &&
+        (newmachine != "") &&
+        (newmachine != "notset")
+    ){                
+        var client = new HttpClient();
+
+        var suburl = (url + '?operation=approvaltakeover' + 
+                        '&submitrequestmachine=' + oldmachine + 
+                        '&submitnewmachine=' + newmachine
+                        );
+                        
+        client.get( suburl, function(response) {
+                if(response && response != ""){          
+                    response = "Approvals migrated:<br/>" + response
+                    `$('#existing_approvals').html(response);
+                    document.getElementById("submitmigration").disabled=true;
+                }          
+        }, "POST");
+    }else{
+        `$('#existing_approvals').html('Please select both devices.');
+    }
+}
+
+
+</script>
+
+$(
+    if($userIsAdmin){
+        #Get Computers
+		$WhereClause = $null
+		$Collection_BrowsingAllowed | ForEach-Object {
+			if(!$WhereClause){
+				$WhereClause = "SMS_Collection.name LIKE `'$_`'"
+			}else{
+				$WhereClause += " OR SMS_Collection.name LIKE `'$_`'"
+			}
+		}
+		
+        $computers = Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "
+        SELECT 
+            SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client 
+        FROM SMS_R_System where ResourceID in 
+            (
+                SELECT 
+                    ResourceID
+                FROM 
+                    SMS_FullCollectionMembership 
+                JOIN 
+                    SMS_Collection 
+                ON 
+                    SMS_FullCollectionMembership.CollectionID = SMS_Collection.CollectionID 
+                WHERE
+                    $WhereClause
+             )
+        " | Sort-Object -Property Name
+
+        $PotentialApps = Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "
+        SELECT 
+            SMS_Application.Manufacturer, SMS_Application.LocalizedDisplayName, SMS_Application.ModelName
+        FROM 
+            SMS_Application 
+        JOIN 
+            SMS_DeploymentSummary
+        ON 
+            SMS_Application.ModelName = SMS_DeploymentSummary.ModelName
+        WHERE
+            SMS_Application.IsLatest = 1 AND
+            SMS_Application.IsSuperseded = 0 AND
+            SMS_DeploymentSummary.RequireApproval = 1
+        "    
+
+        #Build Fields
+        @"
+        <!-- Form Name -->
+        <legend>Pre-create Approvals</legend>
+    
+        <!-- Machine -->
+        <label class="control-label" for="dropdown-menu">Machine</label>  
+        <select class="form-control input-md" id="machine" onchange="calculate()">
+        <option value = 'notset'>Please select!</option>
+        $(  
+            $computers | ForEach-Object {     
+                "<option value='$($_.Name)'>$($_.Name)</option>"
+            }
+        )
+        </select>
+
+        <!-- User -->
+        <label class="control-label" for="dropdown-menu">User</label>  
+        <select class="form-control input-md" id="user" onchange="calculate()">
+        <option value = 'notset'>Please select!</option>
+        $(  
+            (Get-PodeState -Name "cache_Users").GetEnumerator() | ForEach-Object {     
+                "<option value='$($_.Value.SID)'>$($_.Value.DisplayName)</option>"
+            }
+        )
+        </select>
+    
+        <!-- Application -->
+        <label class="control-label" for="dropdown-menu">Application</label>  
+        <select class="form-control input-md" id="application" onchange="calculate()">
+        <option value = 'notset'>Please select!</option>
+        $(  
+            $PotentialApps | ForEach-Object {     
+                "<option value='$($_.ModelName)'>$($_.Manufacturer + " " + $_.LocalizedDisplayName)</option>"
+            }
+        )
+        </select>
+    
+        <!-- Button -->
+        <div class="form-group">
+            <label class="col-md-4 control-label" for=""> </label>
+            <div class="col-md-4">
+            <button id="submitmigration" name="singlebutton" class="btn btn-primary" onclick="submitData()" disabled="true">Submit</button>
+            </div>
+        </div>  
+        
+        <div class="row justify-content-center">
+            <div class="col-auto">
+                <div id="existing_approvals">
+                    Existing approvals will be shown as soon as both devices are selected.
+                </div>
+            </div>
+        </div>
+"@
+    }else{
+        "You don't have access to this page"
+    }
+)
+<!-- ############################################### End ################################################## -->
