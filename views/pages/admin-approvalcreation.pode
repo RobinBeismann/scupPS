@@ -62,38 +62,39 @@ function calculate(){
                 }           
         }, "GET");
     }else{
-        `$('#existing_approvals').html('Please select both devices to show existing approvals.');
+        `$('#existing_approvals').html('Please select all values.');
         document.getElementById("submitmigration").disabled=false;
     }
 }
 
 function submitData(){
-    var oldmachine = document.getElementById('oldmachine').value;
-    var newmachine = document.getElementById('newmachine').value;
-    `$('#existing_approvals').html('Migrating approvals, please wait..');
-
+    var machine = document.getElementById('machine').value;
+    var user = document.getElementById('user').value;
+    var application = document.getElementById('application').value;
+    `$('#existing_approvals').html('Retrieving approvals, please wait.');
     if(
-        (oldmachine != "notset") && 
-        (oldmachine != "") &&
-        (newmachine != "") &&
-        (newmachine != "notset")
+        (machine != "notset") && 
+        (machine != "") &&
+        (user != "") &&
+        (user != "notset") &&
+        (application != "") &&
+        (application != "notset")
     ){                
         var client = new HttpClient();
-
-        var suburl = (url + '?operation=approvaltakeover' + 
-                        '&submitrequestmachine=' + oldmachine + 
-                        '&submitnewmachine=' + newmachine
+        var suburl = (url + '?operation=approvalcreation' + 
+                        '&submitrequestmachine=' + machine + 
+                        '&submitrequestapplication=' + application + 
+                        '&submitrequestuser=' + user
                         );
                         
         client.get( suburl, function(response) {
                 if(response && response != ""){          
-                    response = "Approvals migrated:<br/>" + response
                     `$('#existing_approvals').html(response);
                     document.getElementById("submitmigration").disabled=true;
                 }          
         }, "POST");
     }else{
-        `$('#existing_approvals').html('Please select both devices.');
+        `$('#existing_approvals').html('Please select all values.');
     }
 }
 
@@ -194,7 +195,7 @@ $(
         <div class="row justify-content-center">
             <div class="col-auto">
                 <div id="existing_approvals">
-                    Existing approvals will be shown as soon as both devices are selected.
+                    Please select all values.
                 </div>
             </div>
         </div>
