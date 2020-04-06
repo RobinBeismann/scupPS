@@ -33,13 +33,7 @@ if($operation -eq "approvalcreationpreview" -or $operation -eq "approvalcreation
         ($requestorMachineGuid = $requestorMachine.SMSUniqueIdentifier)
     ){
         if($operation -eq "approvalcreationpreview" -and $existingApprovals){
-            
-            "This approval already exists!"
-            <#Only show approved approval requests
-            if($_.CurrentState -eq 4){
-                "$($_.User): $($_.Application)</br>"
-            }
-            #>
+            "This approval already exists."
         }
         <#
         $existingApprovals | ForEach-Object {
