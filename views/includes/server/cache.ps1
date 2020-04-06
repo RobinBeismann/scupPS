@@ -46,7 +46,7 @@ Add-PodeSchedule -Name 'CacheUsers' -Cron '@hourly' -OnStart -ScriptBlock {
     
     $users = @{}
     $usersDNtoSID = @{}
-    Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "SELECT * FROM SMS_R_USER" |  ForEach-Object {    
+    Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "SELECT * FROM SMS_R_USER WHERE displayName IS NOT NULL" |  ForEach-Object {    
         $users.($_.SID) += ConvertTo-Hashtable -InputObject $_
         $usersDNtoSID.$($_.DistinguishedName) = $_.SID
     }
