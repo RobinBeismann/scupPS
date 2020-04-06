@@ -19,7 +19,7 @@ if(
     ($operation -eq "revokerequest")
 ){
     $reqObj = Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "Select * From SMS_UserApplicationRequest where RequestGUID='$requestID'" | Get-CimInstance
-    $reqObjRequestor = Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "Select * From SMS_R_USER where Sid='$($reqObj.UserSid)'"
+    $reqObjRequestor = (Get-PodeState -Name "cache_Users").($reqObj.UserSid)
     $reqObjApprover = $authenticatedUser
     $reqObjOO = [wmi]"\\$SCCMServer\$($SCCMNameSpace):SMS_UserApplicationRequest.RequestGuid=`"$requestId`"" #Object for object oriented calls
     

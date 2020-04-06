@@ -1,7 +1,6 @@
 ﻿$( 
     #Include Config
     . ".\views\includes\core\config.ps1"
-    . ".\views\includes\core\menuItems.ps1"
     . ".\views\includes\core\userLib.ps1"  
 )
 <!-- ############################################### Header ############################################### -->
@@ -79,8 +78,8 @@
             <span>User Area</span>
             </h6>
 
-            $(               
-                (Get-PodeState -Name "navItems").GetEnumerator() | Where-Object { $_.Value -notlike "admin-*" } | ForEach-Object {         
+            $(
+                (Get-PodeState -Name "navItems").GetEnumerator() | Where-Object { $_.Value -notlike "admin-*" } | ForEach-Object {       
                     "                        
                     <li class=`"nav-item`">
                         <a id=`"nav-$($_.Value)`" href=`"?page=$($_.Value)`" class=`"nav-link`">

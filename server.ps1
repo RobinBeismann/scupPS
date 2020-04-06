@@ -27,8 +27,7 @@ Start-PodeServer -Threads 10 {
     #Routes
     Write-Host("Server: Adding 'Index' Route..")
     Add-PodeRoute -Method Get -Path '/' -Middleware $IISAuth -ScriptBlock {
-        param($Data)       
-        
+        param($Data)        
         Write-PodeViewResponse -Path 'index' -Data $Data
     }
 
