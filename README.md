@@ -22,6 +22,7 @@ This portal on one hand offers a interface that builts upon the native SCCM Soft
     * View your own requests and their Status
   * **Admin View**
     * See all requests and approve, deny or revoke them
+    * Pre-create Requests for a User on a specific Machine
 * **Helpdesk Functions**
   * **List Client Details**: View a hardware summary of a client (Manufacturer, Model, Serialnumber, Name, Domain, Memory, Disks and Config Manager Client details)
   * **List Computers**: View computers, their primary user, last activity, last AD Site and the last logged on User per Collection
