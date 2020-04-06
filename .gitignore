@@ -6,4 +6,4 @@
 *.code-workspace
 logs/*
 views/includes/core/config.ps1
-server.ps1
+states.json
