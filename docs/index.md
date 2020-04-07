@@ -2,7 +2,7 @@
 
 # Welcome
 
-[![MIT licensed](https://img.shields.io/badge/license-mit-blue.svg)](https://raw.githubusercontent.com/RobinBeismann/scupPS/master/LICENSE)
+[![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/RobinBeismann/scupPS/master/LICENSE)
 
 
 scupPS is a User Portal for Microsoft Endpoint Configuration Mananger, previously called Microsoft System Center Configuration Manager.
