@@ -1,5 +1,7 @@
 #Get authenticated user
-$AuthenticatedUser = Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -Query "select * from sms_r_user where DistinguishedName='$($Data.Auth.User.DistinguishedName)'"
+$AuthenticatedUserSID = (Get-PodeState -Name "cache_UsersDNtoSID").($Data.Auth.User.DistinguishedName)
+$AuthenticatedUser = (Get-PodeState -Name "cache_Users").$AuthenticatedUserSID
+#$AuthenticatedUser = Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -Query "select * from sms_r_user where DistinguishedName='$($Data.Auth.User.DistinguishedName)'"
 
 #Check if the user is admin and if so set the variable, other pages may rely on this
 $userIsAdmin = $null
@@ -27,14 +29,19 @@ if(
 }
 
 function Test-ApproveCompetence($Manager,$User){
+    $isAdmin = $Group_PortalAdmins -in $Manager.UserGroupName
+    $managerCostcenters = $Manager.$Attribute_managedcostCenters
+
     if(
         ($userCostcenter = $User.$Attribute_costCenter) -and 
-        ($managerCostcenters = $Manager.$Attribute_managedcostCenters)
+        (
+            $managerCostcenters -or $isAdmin
+        )
     ){
         $managerCostcenters = $managerCostcenters.Split(";")
         if(
-            ($userCostcenter -in $managerCostcenters) -or
-            ($Group_PortalAdmins -in $Manager.UserGroupName)       
+            $isAdmin -or 
+            ($userCostcenter -in $managerCostcenters)             
         ){
             return $true
         }

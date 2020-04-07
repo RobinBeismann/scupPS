@@ -7,7 +7,8 @@ $(
     Get-ChildItem -Path "views\includes\lib" -File -Include "*.ps1" -Recurse | ForEach-Object {
         . $_.FullName
     }
-
+)
+$(
     $operation = $Data.Query.operation
 
     #Include Includes    
@@ -15,3 +16,4 @@ $(
         . $_.FullName
     }    
 )
+$()

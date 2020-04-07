@@ -1,7 +1,7 @@
 <!-- ############################################### Includes ############################################# -->
 $( 
     #Include Config
-    . ".\views\includes\core\menuItems.ps1"
+    . ".\views\includes\core\config.ps1"
     . ".\views\includes\core\userLib.ps1"
     
 )

@@ -86,11 +86,6 @@ $(
     ){ 
     
         "<br/><br/>"
-        
-        $costCentersByUser = @{}
-        $userCMRessource = @{}
-        $userCMApplications = @{}
-
         '<style type="text/css">
         .tg  {border-collapse:collapse;border-spacing:0;}
         .tg td{font-family:Arial, sans-serif;font-size:14px;padding:10px 5px;border-style:solid;border-width:1px;overflow:hidden;word-break:normal;border-color:black;}
@@ -107,31 +102,16 @@ $(
         }
 
         #Get approval requests
-        $openRequests = Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "Select * From SMS_UserApplicationRequest $queryAddition"
+        $openRequests = Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "Select * From SMS_UserApplicationRequest $queryAddition" | Get-CimInstance
         $managedRequests = @()
 
         #Process
-        $openRequests | ForEach-Object {
-            if(
-                #Check if we already got the costcenter for this user
-                !($userCostcenter = $costCentersByUser[$_.User]) -or
-                !($userCMRessource[$_.User])
-            ){
-                #No -> Get the current costcenter out of SCCM            
-                $costCentersByUser[$_.User] = $cmRessource.$($Attribute_costCenter)
-
-                #Slow: $userCMRessource[$_.User] = Get-CMResource -ResourceId (Get-CMUser -Name $_.User | Select-Object -ExpandProperty ResourceID) -Fast
-                $doubleBackslashUsername = $_.User.Replace("\","\\")
-                $userCMRessource[$_.User] = Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "select * from sms_r_user where UniqueUserName='$doubleBackslashUsername'"
-                $userCostcenter = $userCMRessource[$_.User].$($Attribute_costCenter)
-            }
-        
+        $openRequests | ForEach-Object {        
             #Check if our current user is responsible for this users' costcenter
-            if($managedCostCenters.Contains($userCostcenter) -or $userIsAdmin){
+            if(
+                (Test-ApproveCompetence -User (Get-PodeState -Name "cache_Users").($_.UserSid) -Manager $authenticatedUser)
+            ){                
                 #Yes he is -> Add this request to his table
-                if(!($userCMApplications[$_.Modelname])){
-                    $userCMApplications[$_.Modelname] = Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "select * from SMS_Application where ModelName='$($_.Modelname)' AND IsLatest = 1"
-                }
                 $managedRequests += $_
             }
         }
@@ -154,14 +134,14 @@ $(
         if(!$ShowApprovals -or $ShowApprovals -ne "history"){
 
             $managedRequests | ForEach-Object {
-                $cmRessource = $userCMRessource[$_.User]
+                $cmRessource = (Get-PodeState -Name "cache_Users").($_.UserSid)
                 "<tr>
                     <td scope='col'>$($cmRessource.FullUserName)</td>
                     <td scope='col'>$($cmRessource.$Attribute_costCenter)</td>
                     <td scope='col'><a href='mailto:$($cmRessource.Mail)'>$($cmRessource.Mail)</a></td>
                     <td scope='col'>$($_.Application)</td>
                     <td scope='col'>$($_.RequestedMachine)</td>
-                    <td scope='col'>$(Replace-HTMLVariables($userCMApplications[$_.Modelname].LocalizedDescription))</td>
+                    <td scope='col'>$(Replace-HTMLVariables( ((Get-PodeState -Name "cache_Applications")[$_.Modelname]).LocalizedDescription))</td>
                     <td scope='col'>$($_.Comments)</td>
                     <td scope='col'>
                         <button id='btn_approve_$($_.RequestGuid)' name='btn_approve' class='btn btn-primary' onclick='handleRequest(`"approverequest`",`"$($_.RequestGuid)`"`)'>Approve</button>
@@ -174,14 +154,14 @@ $(
         }else{
             #Build history request table
             $managedRequests | ForEach-Object {
-                $cmRessource = $userCMRessource[$_.User]
+                $cmRessource = (Get-PodeState -Name "cache_Users").($_.UserSid)
                 "<tr>
                     <td scope='col'>$($cmRessource.FullUserName)</td>
                     <td scope='col'>$($cmRessource.$Attribute_costCenter)</td>
                     <td scope='col'><a href='mailto:$($cmRessource.Mail)'>$($cmRessource.Mail)</a></td>
                     <td scope='col'>$($_.Application)</td>
                     <td scope='col'>$($_.RequestedMachine)</td>
-                    <td scope='col'>$(Replace-HTMLVariables($userCMApplications[$_.Modelname].LocalizedDescription))</td>
+                    <td scope='col'>$(Replace-HTMLVariables( ((Get-PodeState -Name "cache_Applications")[$_.Modelname]).LocalizedDescription))</td>
                     <td scope='col'>$($_.Comments)</td>
                     <td scope='col'>
                     <button id='btn_approve_$($_.RequestGuid)' name='btn_approve' class='btn btn-primary' onclick='handleRequest(`"approverequest`",`"$($_.RequestGuid)`"`)'>Approve</button>
@@ -231,18 +211,11 @@ $(
             </tr>
         '
 
-        $userCMApplications = @{}
-        $managedRequests | ForEach-Object {
-            if(!($userCMApplications[$_.Modelname])){
-                $userCMApplications[$_.Modelname] = Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "select * from SMS_Application where ModelName='$($_.Modelname)' AND IsLatest = 1"
-            }
-        }
-
-        $managedRequests | ForEach-Object {
+        $managedRequests | ForEach-Object -Parallel {
             "<tr>
                 <td scope='col'>$($_.Application)</td>
                 <td scope='col'>$($_.RequestedMachine)</td>
-                <td scope='col'>$(Replace-HTMLVariables($userCMApplications[$_.Modelname].LocalizedDescription))</td>
+                <td scope='col'>$(Replace-HTMLVariables( ((Get-PodeState -Name "cache_Applications")[$_.Modelname]).LocalizedDescription))</td>
                 <td scope='col'>$($_.Comments)</td>
             </tr>
             "

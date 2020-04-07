@@ -3,7 +3,13 @@ Start-PodeServer -Threads 10 {
 
     #Logging
     New-PodeLoggingMethod -File -Path ./logs -Name 'errors' -MaxSize "100MB" | Enable-PodeErrorLogging
-    
+    New-PodeLoggingMethod -File -Path ./logs -Name 'request' -MaxSize "100MB" | Enable-PodeRequestLogging
+    New-PodeLoggingMethod -File -Path ./logs -Name 'feed' -MaxSize "100MB" | Add-PodeLogger -Name 'Feed' -ScriptBlock {
+        param($arg)        
+        $string = ($arg.GetEnumerator() | ForEach-Object { $_.Name + ": " + $_.Value }) -join "; "
+        return $string
+    } -ArgumentList $arg
+
     #View Engine
     Set-PodeViewEngine -Type Pode
 
@@ -27,8 +33,7 @@ Start-PodeServer -Threads 10 {
     #Routes
     Write-Host("Server: Adding 'Index' Route..")
     Add-PodeRoute -Method Get -Path '/' -Middleware $IISAuth -ScriptBlock {
-        param($Data)       
-        
+        param($Data)        
         Write-PodeViewResponse -Path 'index' -Data $Data
     }
 
