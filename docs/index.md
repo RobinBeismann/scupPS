@@ -31,6 +31,7 @@ The Web UI is served by a bootstrap derived template called [AdminLTE](https://g
   * Limited functionality:
     * SCCM 1902
   * Works no matter if the Feature "Approve application requests for users per device" is enabled or not
+  * Support for Application Supersedence, existing Approvals will be migrated to the superseeding Application
 * **Application Approval Workflow**
   * *Supports all Application Model based Apps in MEMCM/SCCM*
   * **Manager View**
