@@ -96,9 +96,9 @@ $(
 
         $ShowApprovals = $Data.Query['ShowApprovals']        
         if($ShowApprovals -ne "history"){
-            $queryAddition = "AND  SMS_Application.CurrentState='1' AND SMS_Application.CurrentState!='2'"
+            $queryAddition = "AND SMS_Application.CurrentState='1' AND SMS_Application.CurrentState!='2'"
         }else{        
-            $queryAddition = "AND  SMS_Application.CurrentState!='1' AND SMS_Application.CurrentState!='2'"
+            $queryAddition = "AND SMS_Application.CurrentState!='1' AND SMS_Application.CurrentState!='2'"
         }
 
         #Get approval requests
