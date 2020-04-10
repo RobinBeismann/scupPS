@@ -96,13 +96,26 @@ $(
 
         $ShowApprovals = $Data.Query['ShowApprovals']        
         if($ShowApprovals -ne "history"){
-            $queryAddition = "where CurrentState='1' and CurrentState!='2'"
+            $queryAddition = "AND  SMS_Application.CurrentState='1' AND SMS_Application.CurrentState!='2'"
         }else{        
-            $queryAddition = "where CurrentState!='1' and CurrentState!='2'"
+            $queryAddition = "AND  SMS_Application.CurrentState!='1' AND SMS_Application.CurrentState!='2'"
         }
 
         #Get approval requests
-        $openRequests = Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "Select * From SMS_UserApplicationRequest $queryAddition" | Get-CimInstance
+        $openRequests = Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "
+        SELECT 
+            SMS_UserApplicationRequest.* 
+        FROM 
+            SMS_UserApplicationRequest
+        JOIN 
+            SMS_Application 
+        ON 
+            SMS_Application.ModelName = SMS_UserApplicationRequest.ModelName
+        WHERE
+            SMS_Application.IsLatest = 1 AND
+            SMS_Application.IsSuperseded = 0
+            $queryAddition
+        " | Get-CimInstance
         $managedRequests = @()
 
         #Process

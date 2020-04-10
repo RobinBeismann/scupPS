@@ -62,11 +62,10 @@ Add-PodeSchedule -Name 'migrateSupersededApprovals' -Cron '@hourly' -OnStart -Sc
             $computerGUID = $computer.SMSUniqueIdentifier
             $doubleBackslashUsername = $oldApproval.User.Replace("\","\\")
             $oldApprovalUser = Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "select * from sms_r_user where UniqueUserName='$doubleBackslashUsername'"
-    
+
             #Check if there is already and approval for this machine
             $newAppModelName = $superseedingApps[$oldApproval.ModelName]
-            $newApp = (Get-PodeState -Name "cache_Applications")[$newAppModelName]
-            $existingApproval = Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "
+            $migratedApproval = Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "
                 SELECT 
                     * 
                 FROM 
@@ -76,7 +75,7 @@ Add-PodeSchedule -Name 'migrateSupersededApprovals' -Cron '@hourly' -OnStart -Sc
                     ModelName = '$newAppModelName' AND
                     RequestedMachine = '$computerName'
             "
-    
+
             $approvalHistory = Get-CMAppApprovalHistory -requestObject $oldApproval
             
             if(
@@ -87,21 +86,21 @@ Add-PodeSchedule -Name 'migrateSupersededApprovals' -Cron '@hourly' -OnStart -Sc
                 $computerGUID -and
                 $doubleBackslashUsername -and
                 $oldApprovalUser -and
-                $newAppModelName
+                $newAppModelName -and
+                !$migratedApproval
             ){
                 $step = 1
                 $approvalHistory | ForEach-Object {
                     
                     #Request does not yet exist, create it but set auto install to false
                     if(
-                        $_.State -eq 1 -and
-                        !$existingApproval
+                        $_.State -eq 1
                     ){
-                        $initialComment = "[$($_.Date | Get-Date -Format "yyyy-MM-dd hh:mm:ss")] $($oldApprovalUser.FullUserName): $($_.Comments)"
-                        Write-scupPSLog("$($computerName): Creating Approval for $($newApp.LocalizedDisplayName + " " + $newApp.SoftwareVersion) from $($_.Date)")                    
-                        "[Step $step] $($newApp.LocalizedDisplayName + " " + $newApp.SoftwareVersion): Creating initial approval (Old comment: $initialComment)<br/>"
+                        $initialComment = "[$(Get-Date)] Migrated Request from $($oldApprovalUser.FullUserName): $($_.Comments)"
+                        Write-Host("$($computerName): Creating Approval for $($oldApproval.Application) from $($_.Date)")                    
+                        "[Step $step] $($oldApproval.Application): Creating initial approval (Old comment: $initialComment)<br/>"
                         $step++
-    
+
                         $cimArgs = @{ 
                             ApplicationID = $newAppModelName
                             AutoInstall = $false
@@ -112,8 +111,8 @@ Add-PodeSchedule -Name 'migrateSupersededApprovals' -Cron '@hourly' -OnStart -Sc
                         Invoke-CimMethod -Namespace $SCCMNameSpace -ComputerName $SCCMServer -ClassName "SMS_UserApplicationRequest" -MethodName "CreateApprovedRequest" -Arguments $cimArgs
                     
                         #Get approval and deny it for state migration
-                        Write-scupPSLog("$($computerName): Initial deny $($newApp.LocalizedDisplayName + " " + $newApp.SoftwareVersion) from $($_.Date)")                    
-                        "[Step $step] $($newApp.LocalizedDisplayName + " " + $newApp.SoftwareVersion): Creating initial denial (Old comment: $initialComment)<br/>"
+                        Write-Host("$($computerName): Initial deny $($oldApproval.Application) from $($_.Date)")                    
+                        "[Step $step] $($oldApproval.Application): Creating initial denial (Old comment: $initialComment)<br/>"
                         $step++
                         $existingApproval = Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "
                             SELECT 
@@ -126,7 +125,7 @@ Add-PodeSchedule -Name 'migrateSupersededApprovals' -Cron '@hourly' -OnStart -Sc
                                 RequestedMachine = '$($oldApproval.RequestedMachine)'
                         "
                         $existingApproval = [wmi]"\\$SCCMServer\$($SCCMNameSpace):SMS_UserApplicationRequest.RequestGuid=`"$($existingApproval.RequestGuid)`"" #Object for object oriented calls
-                        $existingApproval.Deny("System: This request was migrated to a newer version of the product, if it was not approved by your costcenter manager before, you will need to re-request it.") | Out-Null
+                        $existingApproval.Deny("System: This has been upgraded. If your previous request was not approved, please re-request it.") | Out-Null
                     }
                                 
                     #Request was approved before, approve it
@@ -147,12 +146,12 @@ Add-PodeSchedule -Name 'migrateSupersededApprovals' -Cron '@hourly' -OnStart -Sc
                         $_.State -eq 4 -and
                         $existingApproval
                     ){
-                        "[Step $step] $($newApp.LocalizedDisplayName + " " + $newApp.SoftwareVersion): Approving application (Old comment: $($_.Comments))<br/>"
+                        "[Step $step] $($oldApproval.Application): Approving application (Old comment: $($_.Comments))<br/>"
                         $step++
-                        Write-scupPSLog("$($computerName): Taking over Approval Action $($_.State) for $($newApp.LocalizedDisplayName + " " + $newApp.SoftwareVersion) from $($_.Date)")
-                        $existingApproval.Approve("[$($_.Date | Get-Date -Format "yyyy-MM-dd hh:mm:ss")] $($_.Comments)") | Out-Null
+                        Write-Host("$($computerName): Taking over Approval Action $($_.State) for $($oldApproval.Application) from $($_.Date)")
+                        $existingApproval.Approve("[Migrated] $($_.Comments)") | Out-Null
                     }
-    
+
                     #Request was denied before, deny it        
                     $existingApproval = Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "
                         SELECT 
@@ -172,19 +171,15 @@ Add-PodeSchedule -Name 'migrateSupersededApprovals' -Cron '@hourly' -OnStart -Sc
                         ($_.State -eq 3) -and
                         $existingApproval
                     ){
-                        "[Step $step] $($newApp.LocalizedDisplayName + " " + $newApp.SoftwareVersion): Deny application (Old comment: $($_.Comments))<br/>"
+                        "[Step $step] $($oldApproval.Application): Deny application (Old comment: $($_.Comments))<br/>"
                         $step++
-                        Write-scupPSLog("$($computerName): Taking over Approval Action $($_.State) for $($newApp.LocalizedDisplayName + " " + $newApp.SoftwareVersion) from $($_.Date)")
+                        Write-Host("$($computerName): Taking over Approval Action $($_.State) for $($oldApproval.Application) from $($_.Date)")
                                 
                         if($existingApproval.CurrentState -ne 3){
-                            $existingApproval.Deny("[$($_.Date | Get-Date -Format "yyyy-MM-dd hh:mm:ss")] $($_.Comments)") | Out-Null
+                            $existingApproval.Deny("[Migrated] $($_.Comments)") | Out-Null
                         }
                     }
                 }
-    
-                $reqObjOO = [wmi]"\\$SCCMServer\$($SCCMNameSpace):SMS_UserApplicationRequest.RequestGuid=`"$($oldApproval.RequestGuid)`"" #Object for object oriented calls
-                Write-scupPSLog("Deleting Approval: $($oldApproval.User): $($newApp.LocalizedDisplayName + " " + $newApp.SoftwareVersion) on $($oldApproval.RequestedMachine)")
-                $reqObjOO.Delete()
             }
         }catch{
             Write-scupPSLog("Error during superseedence Migration: $_")
