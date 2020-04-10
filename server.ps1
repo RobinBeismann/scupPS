@@ -1,4 +1,4 @@
-Start-PodeServer -Threads 10 {
+Start-PodeServer -Threads (Get-CimInstance -ClassName "Win32_Processor" | Select-Object -ExpandProperty NumberOfLogicalProcessors) -ScriptBlock {
     Add-PodeEndpoint -Address 127.0.0.1 -Protocol Http
 
     #Logging

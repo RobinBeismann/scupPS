@@ -31,12 +31,10 @@ if(
 function Test-ApproveCompetence($Manager,$User){
     $isAdmin = $Group_PortalAdmins -in $Manager.UserGroupName
     $managerCostcenters = $Manager.$Attribute_managedcostCenters
+    $userCostcenter = $User.$Attribute_costCenter
 
     if(
-        ($userCostcenter = $User.$Attribute_costCenter) -and 
-        (
-            $managerCostcenters -or $isAdmin
-        )
+        ($userCostcenter -and $managerCostcenters) -or $isAdmin
     ){
         $managerCostcenters = $managerCostcenters.Split(";")
         if(

@@ -46,7 +46,16 @@ Add-PodeSchedule -Name 'CacheUsers' -Cron '@hourly' -OnStart -ScriptBlock {
     
     $users = @{}
     $usersDNtoSID = @{}
-    Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "SELECT * FROM SMS_R_USER WHERE displayName IS NOT NULL" |  ForEach-Object {    
+    Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "
+    SELECT 
+        * 
+    FROM 
+        SMS_R_USER 
+    WHERE 
+            givenName IS NOT NULL 
+        AND
+            sn IS NOT NULL  
+    " |  ForEach-Object {    
         $users.($_.SID) += ConvertTo-Hashtable -InputObject $_
         $usersDNtoSID.$($_.DistinguishedName) = $_.SID
     }
@@ -55,8 +64,7 @@ Add-PodeSchedule -Name 'CacheUsers' -Cron '@hourly' -OnStart -ScriptBlock {
     Write-Host("Caching $($users.Count) Users..")
     Set-PodeState -Name "cache_Users" -Value $users
     Set-PodeState -Name "cache_UsersDNtoSID" -Value $usersDNtoSID
-    
-    Save-PodeState -Path ".\states.json"
+    Invoke-PodeSchedule -Name 'saveStates'
 }
 
 # Cache Applications
@@ -112,7 +120,7 @@ Add-PodeSchedule -Name 'CacheApplications' -Cron '@hourly' -OnStart -ScriptBlock
 
     Write-Host("Caching $($applications.Count) Applications..")
     Set-PodeState -Name "cache_Applications" -Value $applications
-    Save-PodeState -Path ".\states.json"
+    Invoke-PodeSchedule -Name 'saveStates'
 }
 
 # Cache Machines
@@ -168,7 +176,7 @@ Add-PodeSchedule -Name 'CacheMachines' -Cron '@hourly' -OnStart -ScriptBlock {
 
     Write-Host("Caching $($machines.Count) Machines..")
     Set-PodeState -Name "cache_Machines" -Value $machines
-    Save-PodeState -Path ".\states.json"
+    Invoke-PodeSchedule -Name 'saveStates'
 }
 
 # Cache Navigation Bar
@@ -198,5 +206,14 @@ Add-PodeSchedule -Name 'CacheNavbar' -Cron '@hourly' -OnStart -ScriptBlock {
         }
     }
     Set-PodeState -Name "navItems" -Value $obj | Out-Null
-    Save-PodeState -Path ".\states.json"
+    Invoke-PodeSchedule -Name 'saveStates'
+}
+
+# Regulary save states
+Write-Host("Adding Scheduled Job to save states every minute..")
+Add-PodeSchedule -Name 'saveStates' -Cron '@minutely' -ScriptBlock { 
+    param($e)        
+    Lock-PodeObject -Object $e.Lockable {
+        Save-PodeState -Path ".\states.json"
+    }
 }
