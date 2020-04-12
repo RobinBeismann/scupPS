@@ -17,7 +17,7 @@ $(
 $(
     if(
         ($authenticatedUser) -and
-        ($managedCostCenters = $authenticatedUser.$Attribute_managedcostCenters) -and 
+        ($managedCostCenters = $authenticatedUser.$(Get-scupPSValue -Name "Attribute_managedcostCenters")) -and 
         ($managedCostCenters -ne $null) -and 
         ($managedCostCenters -ne "")
     ){
@@ -25,14 +25,14 @@ $(
         #Search costcenter managers
         $managersPerCostCenter = @{}
         #Get all users with the managedCostcenterAttribute
-        Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "select * from sms_r_user where $Attribute_managedcostCenters IS NOT NULL" | Where-Object { 
-            $_.$Attribute_managedcostCenters -and ($_.$Attribute_managedcostCenters -ne "") -and ($_.$Attribute_managedcostCenters -ne "admin")
+        Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "select * from sms_r_user where $(Get-scupPSValue -Name "Attribute_managedcostCenters") IS NOT NULL" | Where-Object { 
+            $_.$(Get-scupPSValue -Name "Attribute_managedcostCenters") -and ($_.$(Get-scupPSValue -Name "Attribute_managedcostCenters") -ne "") -and ($_.$(Get-scupPSValue -Name "Attribute_managedcostCenters") -ne "admin")
         } | ForEach-Object {
             #Save the user to be used in the next loop
             $user = $_
 
             #Loop through the costcenters
-            $_.$Attribute_managedcostCenters.Split(";") | ForEach-Object {
+            $_.$(Get-scupPSValue -Name "Attribute_managedcostCenters").Split(";") | ForEach-Object {
                 #Initialize nested array if not done already
                 if(!($managersPerCostCenter[$_])){
                     $managersPerCostCenter[$_] = @()
@@ -67,7 +67,7 @@ $(
             $usermanagedCostcenters = @()
             $managersPerCostCenter.GetEnumerator() | ForEach-Object {
                 #Check if the user manages this costcenter
-                if($_.Name -in ($authenticatedUser.$Attribute_managedcostCenters).Split(";")){
+                if($_.Name -in ($authenticatedUser.$(Get-scupPSValue -Name "Attribute_managedcostCenters")).Split(";")){
                     $usermanagedCostcenters += $_
                 }
             }

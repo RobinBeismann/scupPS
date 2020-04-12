@@ -1,10 +1,3 @@
-$global:log = ""
-
-function Custom-Log($string){
-    $log += ([string](Get-Date) + ": $string")
-    return $string
-}
-
 function Get-CMAppApprovalHistory($requestObject){
     ($requestObject | Get-CimInstance).RequestHistory | ForEach-Object {
     
@@ -26,9 +19,9 @@ if($operation -eq "approvaltakeoverpreview" -or $operation -eq "approvaltakeover
     $oldComputerName = $requestorMachine
     $newComputerName = $newMachine
 
-    $oldApprovals = Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "Select * From SMS_UserApplicationRequest where RequestedMachine='$oldComputerName'"
-    $newApprovals = Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "Select * From SMS_UserApplicationRequest where RequestedMachine='$newComputerName'"
-    $newComputer = Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "Select * From SMS_R_SYSTEM where Name='$newComputerName'"
+    $oldApprovals = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "Select * From SMS_UserApplicationRequest where RequestedMachine='$oldComputerName'"
+    $newApprovals = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "Select * From SMS_UserApplicationRequest where RequestedMachine='$newComputerName'"
+    $newComputer = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "Select * From SMS_R_SYSTEM where Name='$newComputerName'"
 
     if(
         $oldApprovals -and
@@ -53,7 +46,7 @@ if($operation -eq "approvaltakeoverpreview" -or $operation -eq "approvaltakeover
                 }
             }else{
                 $doubleBackslashUsername = $oldApproval.User.Replace("\","\\")
-                $oldApprovalUser = Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "select * from sms_r_user where UniqueUserName='$doubleBackslashUsername'"
+                $oldApprovalUser = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "select * from sms_r_user where UniqueUserName='$doubleBackslashUsername'"
                 
                 $approvalHistory = Get-CMAppApprovalHistory -requestObject $oldApproval
 
@@ -69,8 +62,8 @@ if($operation -eq "approvaltakeoverpreview" -or $operation -eq "approvaltakeover
                         Write-Host("$($newComputerName): Creating Approval for $($oldApproval.Application) from $($_.Date)")                    
                         "[Step $step] $($oldApproval.Application): Creating initial approval (Old comment: $initialComment)<br/>"
                         $step++
-                       # Invoke-CimMethod -Path "SMS_UserApplicationRequest" -Namespace $SCCMNameSpace -computer $SCCMServer -Name CreateApprovedRequest -ArgumentList @($oldApproval.ModelName, $false, $newComputerGUID, $initialComment, $oldApproval.User) | Out-Null
-                        Invoke-CimMethod -Namespace $SCCMNameSpace -ComputerName $SCCMServer -ClassName "SMS_UserApplicationRequest" -MethodName "CreateApprovedRequest" -Arguments @{ 
+                       # Invoke-CimMethod -Path "SMS_UserApplicationRequest" -Namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -Name CreateApprovedRequest -ArgumentList @($oldApproval.ModelName, $false, $newComputerGUID, $initialComment, $oldApproval.User) | Out-Null
+                        Invoke-CimMethod -Namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -ComputerName (Get-scupPSValue -Name "SCCM_SiteServer") -ClassName "SMS_UserApplicationRequest" -MethodName "CreateApprovedRequest" -Arguments @{ 
                             ApplicationID = $oldApproval.ModelName
                             AutoInstall = $false
                             ClientGUID = $newComputerGUID
@@ -82,15 +75,15 @@ if($operation -eq "approvaltakeoverpreview" -or $operation -eq "approvaltakeover
                         Write-Host("$($newComputerName): Initial deny $($oldApproval.Application) from $($_.Date)")                    
                         "[Step $step] $($oldApproval.Application): Creating initial denial (Old comment: $initialComment)<br/>"
                         $step++
-                        $existingApproval = Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "Select * From SMS_UserApplicationRequest where RequestedMachine='$newComputerName'" | Where-Object { $_.ModelName -eq $oldApproval.ModelName -and $_.User -eq $oldApproval.User }
-                        $existingApproval = [wmi]"\\$SCCMServer\$($SCCMNameSpace):SMS_UserApplicationRequest.RequestGuid=`"$($existingApproval.RequestGuid)`"" #Object for object oriented calls
+                        $existingApproval = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "Select * From SMS_UserApplicationRequest where RequestedMachine='$newComputerName'" | Where-Object { $_.ModelName -eq $oldApproval.ModelName -and $_.User -eq $oldApproval.User }
+                        $existingApproval = [wmi]"\\$(Get-scupPSValue -Name "SCCM_SiteServer")\$((Get-scupPSValue -Name "SCCM_SiteNamespace")):SMS_UserApplicationRequest.RequestGuid=`"$($existingApproval.RequestGuid)`"" #Object for object oriented calls
                         $existingApproval.Deny("System: Initial deny after migration") | Out-Null
                     }
                                 
                     #Request was approved before, approve it
-                    $existingApproval = Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "Select * From SMS_UserApplicationRequest where RequestedMachine='$newComputerName'" | Where-Object { $_.ModelName -eq $oldApproval.ModelName -and $_.User -eq $oldApproval.User }   
+                    $existingApproval = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "Select * From SMS_UserApplicationRequest where RequestedMachine='$newComputerName'" | Where-Object { $_.ModelName -eq $oldApproval.ModelName -and $_.User -eq $oldApproval.User }   
                     if($existingApproval){
-                        $existingApproval = [wmi]"\\$SCCMServer\$($SCCMNameSpace):SMS_UserApplicationRequest.RequestGuid=`"$($existingApproval.RequestGuid)`"" #Object for object oriented calls
+                        $existingApproval = [wmi]"\\$(Get-scupPSValue -Name "SCCM_SiteServer")\$((Get-scupPSValue -Name "SCCM_SiteNamespace")):SMS_UserApplicationRequest.RequestGuid=`"$($existingApproval.RequestGuid)`"" #Object for object oriented calls
                     }
                     if(
                         $_.State -eq 4 -and
@@ -103,9 +96,9 @@ if($operation -eq "approvaltakeoverpreview" -or $operation -eq "approvaltakeover
                     }
             
                     #Request was denied before, deny it
-                    $existingApproval = Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "Select * From SMS_UserApplicationRequest where RequestedMachine='$newComputerName'" | Where-Object { $_.ModelName -eq $oldApproval.ModelName -and $_.User -eq $oldApproval.User }
+                    $existingApproval = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "Select * From SMS_UserApplicationRequest where RequestedMachine='$newComputerName'" | Where-Object { $_.ModelName -eq $oldApproval.ModelName -and $_.User -eq $oldApproval.User }
                     if($existingApproval){
-                        $existingApproval = [wmi]"\\$SCCMServer\$($SCCMNameSpace):SMS_UserApplicationRequest.RequestGuid=`"$($existingApproval.RequestGuid)`"" #Object for object oriented calls
+                        $existingApproval = [wmi]"\\$(Get-scupPSValue -Name "SCCM_SiteServer")\$((Get-scupPSValue -Name "SCCM_SiteNamespace")):SMS_UserApplicationRequest.RequestGuid=`"$($existingApproval.RequestGuid)`"" #Object for object oriented calls
                     }
                     
                     if(

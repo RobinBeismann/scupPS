@@ -74,7 +74,7 @@ $(
         <select class="form-control input-md" id="collection" onchange="calculate()">
         <option value = 'notset'>Please select!</option>
         $(  
-            $Collection_BrowsingAllowed | ForEach-Object {     
+            $((Get-scupPSValue -Name "Collection_BrowsingAllowed").Split(";")) | ForEach-Object {     
                 "<option value='$($_)'>$($_)</option>"
             }
         )

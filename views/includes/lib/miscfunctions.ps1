@@ -44,7 +44,7 @@ function Get-StringHash([String] $String,$HashName = "MD5")
 
 function Send-CustomMailMessage(){
     param(
-        [string]$SmtpServer,
+        [string]$smtpServer,
         [string]$from,
         [string]$subject,
         [array]$to,
@@ -100,5 +100,5 @@ function Send-AdminNotification(){
         [string]$body
     )
 
-    Send-CustomMailMessage -SmtpServer $smtpServer -from $smtpAdminRecipient -subject $subject -to $smtpAdminRecipient -body $body -BodyAsHtml
+    Send-CustomMailMessage -SmtpServer (Get-scupPSValue -Name "smtpServer") -from (Get-scupPSValue -Name "smtpAdminRecipient") -subject $subject -to (Get-scupPSValue -Name "smtpAdminRecipient") -body $body -BodyAsHtml
 }

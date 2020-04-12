@@ -68,7 +68,7 @@ $(
     if($userIsAdmin){
         #Get Computers
 		$WhereClause = $null
-		$Collection_BrowsingAllowed | ForEach-Object {
+		$((Get-scupPSValue -Name "Collection_BrowsingAllowed").Split(";")) | ForEach-Object {
 			if(!$WhereClause){
 				$WhereClause = "SMS_Collection.name LIKE `'$_`'"
 			}else{
@@ -76,7 +76,7 @@ $(
 			}
 		}
 		
-        $computers = Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "
+        $computers = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "
         SELECT 
             SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client 
         FROM SMS_R_System where ResourceID in 

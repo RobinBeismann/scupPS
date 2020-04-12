@@ -20,7 +20,7 @@ Add-PodeSchedule -Name 'migrateSupersededApprovals' -Cron '@hourly' -OnStart -Sc
     }
     #Build a list of superseeding apps
     $SuperseedingApps = @{}
-    Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "
+    Get-CimInstance -namespace $(Get-scupPSValue -Name "SCCM_SiteNamespace") -computer $(Get-scupPSValue -Name "SCCM_SiteServer") -query "
         SELECT 
             * 
         FROM 
@@ -38,7 +38,7 @@ Add-PodeSchedule -Name 'migrateSupersededApprovals' -Cron '@hourly' -OnStart -Sc
     }
     
     #Get all superseded apps with approvals and loop through them
-    $supersededApprovals = Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "
+    $supersededApprovals = Get-CimInstance -namespace $(Get-scupPSValue -Name "SCCM_SiteNamespace") -computer $(Get-scupPSValue -Name "SCCM_SiteServer") -query "
         SELECT 
             * 
         FROM 
@@ -58,14 +58,14 @@ Add-PodeSchedule -Name 'migrateSupersededApprovals' -Cron '@hourly' -OnStart -Sc
             #Save old Approval for usage in pipes
             $oldApproval = $_.SMS_UserApplicationRequest | Get-CimInstance
             $computerName = $oldApproval.RequestedMachine
-            $computer = Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "Select * From SMS_R_SYSTEM where Name='$computerName'"
+            $computer = Get-CimInstance -namespace $(Get-scupPSValue -Name "SCCM_SiteNamespace") -computer $(Get-scupPSValue -Name "SCCM_SiteServer") -query "Select * From SMS_R_SYSTEM where Name='$computerName'"
             $computerGUID = $computer.SMSUniqueIdentifier
             $doubleBackslashUsername = $oldApproval.User.Replace("\","\\")
-            $oldApprovalUser = Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "select * from sms_r_user where UniqueUserName='$doubleBackslashUsername'"
+            $oldApprovalUser = Get-CimInstance -namespace $(Get-scupPSValue -Name "SCCM_SiteNamespace") -computer $(Get-scupPSValue -Name "SCCM_SiteServer") -query "select * from sms_r_user where UniqueUserName='$doubleBackslashUsername'"
 
             #Check if there is already and approval for this machine
             $newAppModelName = $superseedingApps[$oldApproval.ModelName]
-            $migratedApproval = Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "
+            $migratedApproval = Get-CimInstance -namespace $(Get-scupPSValue -Name "SCCM_SiteNamespace") -computer $(Get-scupPSValue -Name "SCCM_SiteServer") -query "
                 SELECT 
                     * 
                 FROM 
@@ -108,13 +108,13 @@ Add-PodeSchedule -Name 'migrateSupersededApprovals' -Cron '@hourly' -OnStart -Sc
                             Comments = $initialComment
                             Username = $oldApproval.User
                         }
-                        Invoke-CimMethod -Namespace $SCCMNameSpace -ComputerName $SCCMServer -ClassName "SMS_UserApplicationRequest" -MethodName "CreateApprovedRequest" -Arguments $cimArgs
+                        Invoke-CimMethod -Namespace $(Get-scupPSValue -Name "SCCM_SiteNamespace") -ComputerName $(Get-scupPSValue -Name "SCCM_SiteServer") -ClassName "SMS_UserApplicationRequest" -MethodName "CreateApprovedRequest" -Arguments $cimArgs
                     
                         #Get approval and deny it for state migration
                         Write-Host("$($computerName): Initial deny $($oldApproval.Application) from $($_.Date)")                    
                         "[Step $step] $($oldApproval.Application): Creating initial denial (Old comment: $initialComment)<br/>"
                         $step++
-                        $existingApproval = Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "
+                        $existingApproval = Get-CimInstance -namespace $(Get-scupPSValue -Name "SCCM_SiteNamespace") -computer $(Get-scupPSValue -Name "SCCM_SiteServer") -query "
                             SELECT 
                                 * 
                             FROM 
@@ -124,12 +124,12 @@ Add-PodeSchedule -Name 'migrateSupersededApprovals' -Cron '@hourly' -OnStart -Sc
                                 ModelName = '$newAppModelName' AND
                                 RequestedMachine = '$($oldApproval.RequestedMachine)'
                         "
-                        $existingApproval = [wmi]"\\$SCCMServer\$($SCCMNameSpace):SMS_UserApplicationRequest.RequestGuid=`"$($existingApproval.RequestGuid)`"" #Object for object oriented calls
+                        $existingApproval = [wmi]"\\$(Get-scupPSValue -Name "SCCM_SiteServer")\$($(Get-scupPSValue -Name "SCCM_SiteNamespace")):SMS_UserApplicationRequest.RequestGuid=`"$($existingApproval.RequestGuid)`"" #Object for object oriented calls
                         $existingApproval.Deny("System: This has been upgraded. If your previous request was not approved, please re-request it.") | Out-Null
                     }
                                 
                     #Request was approved before, approve it
-                    $existingApproval = Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "
+                    $existingApproval = Get-CimInstance -namespace $(Get-scupPSValue -Name "SCCM_SiteNamespace") -computer $(Get-scupPSValue -Name "SCCM_SiteServer") -query "
                         SELECT 
                             * 
                         FROM 
@@ -140,7 +140,7 @@ Add-PodeSchedule -Name 'migrateSupersededApprovals' -Cron '@hourly' -OnStart -Sc
                             RequestedMachine = '$($oldApproval.RequestedMachine)'
                     "
                     if($existingApproval){
-                        $existingApproval = [wmi]"\\$SCCMServer\$($SCCMNameSpace):SMS_UserApplicationRequest.RequestGuid=`"$($existingApproval.RequestGuid)`"" #Object for object oriented calls
+                        $existingApproval = [wmi]"\\$(Get-scupPSValue -Name "SCCM_SiteServer")\$($(Get-scupPSValue -Name "SCCM_SiteNamespace")):SMS_UserApplicationRequest.RequestGuid=`"$($existingApproval.RequestGuid)`"" #Object for object oriented calls
                     }
                     if(
                         $_.State -eq 4 -and
@@ -153,7 +153,7 @@ Add-PodeSchedule -Name 'migrateSupersededApprovals' -Cron '@hourly' -OnStart -Sc
                     }
 
                     #Request was denied before, deny it        
-                    $existingApproval = Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "
+                    $existingApproval = Get-CimInstance -namespace $(Get-scupPSValue -Name "SCCM_SiteNamespace") -computer $(Get-scupPSValue -Name "SCCM_SiteServer") -query "
                         SELECT 
                             * 
                         FROM 
@@ -164,7 +164,7 @@ Add-PodeSchedule -Name 'migrateSupersededApprovals' -Cron '@hourly' -OnStart -Sc
                             RequestedMachine = '$($oldApproval.RequestedMachine)'
                     "
                     if($existingApproval){
-                        $existingApproval = [wmi]"\\$SCCMServer\$($SCCMNameSpace):SMS_UserApplicationRequest.RequestGuid=`"$($existingApproval.RequestGuid)`"" #Object for object oriented calls
+                        $existingApproval = [wmi]"\\$(Get-scupPSValue -Name "SCCM_SiteServer")\$($(Get-scupPSValue -Name "SCCM_SiteNamespace")):SMS_UserApplicationRequest.RequestGuid=`"$($existingApproval.RequestGuid)`"" #Object for object oriented calls
                     }
                     
                     if(

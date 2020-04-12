@@ -59,7 +59,7 @@
         style="opacity: .8"
         />
     -->
-        <span class="brand-text font-weight-light">$siteTitle</span>
+        <span class="brand-text font-weight-light">$(Get-scupPSValue -Name "siteTitle")</span>
     </a>
     <!-- Sidebar -->
     <div class="sidebar">

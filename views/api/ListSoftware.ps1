@@ -1,16 +1,9 @@
-$global:log = ""
-
-function Custom-Log($string){
-    $log += ([string](Get-Date) + ": $string")
-    return $string
-}
-
 #Request Information
 $requestorMachine = $Data.Query.submitrequestmachine
 
 if($operation -eq "listsoftware" -and $UserIsAdmin){
     
-    $software = Get-CimInstance -ComputerName $SCCMServer -Namespace $SCCMNameSpace -Query (
+    $software = Get-CimInstance -ComputerName (Get-scupPSValue -Name "SCCM_SiteServer") -Namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -Query (
     "SELECT 
         InstalledLocation,ProductVersion,ProductName
     FROM

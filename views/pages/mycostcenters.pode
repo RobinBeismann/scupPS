@@ -17,7 +17,7 @@ $(
 $(
     if(
         ($authenticatedUser) -and
-        ($managedCostCenters = $authenticatedUser.$Attribute_managedcostCenters) -and 
+        ($managedCostCenters = $authenticatedUser.$(Get-scupPSValue -Name "Attribute_managedcostCenters")) -and 
         ($managedCostCenters -ne $null) -and 
         ($managedCostCenters -ne "")
     ){

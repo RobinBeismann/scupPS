@@ -5,7 +5,7 @@
       <!-- Main Footer -->
       <footer class="main-footer">
         <!-- Default to the left -->
-        $siteCopyrightText        
+        $(Get-scupPSValue -Name "siteCopyrightText")        
       </footer>
     </div>
     <!-- ./wrapper -->

@@ -8,15 +8,20 @@ $(
 $( 
 )
 <!-- ############################################### Main ################################################# -->
-$(   
-    if(
-        ($page = $Data.Query['page']) -and
-        ($page -ne "")
+$(
+    if( 
+        (Get-ServerReadyness) -eq $true
     ){
-        Use-PodePartialView -Path "pages/$page" -Data $Data
+        if(
+            ($page = $Data.Query['page']) -and
+            ($page -ne "")
+        ){
+            Use-PodePartialView -Path "pages/$page" -Data $Data
+        }else{
+            Use-PodePartialView -Path "pages/myapprovals" -Data $Data
+        }
     }else{
-        Use-PodePartialView -Path "pages/myapprovals" -Data $Data
+        Use-PodePartialView -Path "pages/config_initial" -Data $Data
     }
 )
 <!-- ############################################### Footer ############################################### -->
-$()

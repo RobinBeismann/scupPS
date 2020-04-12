@@ -46,7 +46,7 @@ Add-PodeSchedule -Name 'CacheUsers' -Cron '@hourly' -OnStart -ScriptBlock {
     
     $users = @{}
     $usersDNtoSID = @{}
-    Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "
+    Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "
     SELECT 
         * 
     FROM 
@@ -114,7 +114,7 @@ Add-PodeSchedule -Name 'CacheApplications' -Cron '@hourly' -OnStart -ScriptBlock
     }
     
     $applications = @{}
-    Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "SELECT * FROM SMS_Application WHERE IsLatest = 1" |  ForEach-Object {    
+    Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "SELECT * FROM SMS_Application WHERE IsLatest = 1" |  ForEach-Object {    
         $applications.($_.Modelname) += ConvertTo-Hashtable -InputObject $_
     }
 
@@ -170,7 +170,7 @@ Add-PodeSchedule -Name 'CacheMachines' -Cron '@hourly' -OnStart -ScriptBlock {
     }
     
     $machines = @{}
-    Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "SELECT * FROM SMS_R_SYSTEM" |  ForEach-Object {    
+    Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "SELECT * FROM SMS_R_SYSTEM" |  ForEach-Object {    
         $machines.($_.Name) += ConvertTo-Hashtable -InputObject $_
     }
 
@@ -212,8 +212,8 @@ Add-PodeSchedule -Name 'CacheNavbar' -Cron '@hourly' -OnStart -ScriptBlock {
 # Regulary save states
 Write-Host("Adding Scheduled Job to save states every minute..")
 Add-PodeSchedule -Name 'saveStates' -Cron '@minutely' -ScriptBlock { 
-    param($e)        
-    Lock-PodeObject -Object $e.Lockable {
+    #param($e)        
+    #Lock-PodeObject -Object $e.Lockable -ScriptBlock {
         Save-PodeState -Path ".\states.json"
-    }
+    #}
 }

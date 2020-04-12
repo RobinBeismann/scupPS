@@ -1,17 +1,10 @@
-$global:log = ""
-
-function Custom-Log($string){
-    $log += ([string](Get-Date) + ": $string")
-    return $string
-}
-
 #Request Information
 $collection = $Data.Query.submitcollection
 
-if($operation -eq "listcomputersummary" -and $UserIsAdmin -and $collection -and ($collection -in $Collection_BrowsingAllowed)){
+if($operation -eq "listcomputersummary" -and $UserIsAdmin -and $collection -and ($collection -in $((Get-scupPSValue -Name "Collection_BrowsingAllowed").Split(";")))){
     
     #Get Computers
-    $wmiComputers = Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "
+    $wmiComputers = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "
     SELECT
          SMS_G_System_Computer_System.Model,SMS_G_System_Computer_System.Manufacturer
     FROM SMS_R_System

@@ -66,7 +66,7 @@ setInterval(function(){
 $(
     if($userIsAdmin){
         #Get Computers
-        $ts = Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "
+        $ts = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "
             SELECT 
                 * 
             FROM SMS_TaskSequenceExecutionStatus

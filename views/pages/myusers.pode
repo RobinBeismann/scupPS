@@ -17,7 +17,7 @@ $(
 $(
     if(
         ($authenticatedUser) -and
-        ($managedCostCenters = $authenticatedUser.$Attribute_managedcostCenters) -and 
+        ($managedCostCenters = $authenticatedUser.$(Get-scupPSValue -Name "Attribute_managedcostCenters")) -and 
         ($managedCostCenters -ne $null) -and 
         ($managedCostCenters -ne "")    
     ){
@@ -29,17 +29,17 @@ $(
         $queryAddition = ""
         $managedCostCenters | ForEach-Object {
             if($queryAddition -eq ""){
-                $queryAddition += "AND $Attribute_costCenter='$_'"
+                $queryAddition += "AND $(Get-scupPSValue -Name "Attribute_costCenter")='$_'"
             }else{
-                $queryAddition += " or $Attribute_costCenter='$_'"
+                $queryAddition += " or $(Get-scupPSValue -Name "Attribute_costCenter")='$_'"
             }
         }
         if($userIsAdmin){
             $queryAddition = $null
         }
 
-        Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "select * from sms_r_user where $Attribute_costCenter IS NOT NULL $queryAddition" | ForEach-Object {
-            "$($_.FullUserName) ($($_.$Attribute_costCenter))<br/>"
+        Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "select * from sms_r_user where $(Get-scupPSValue -Name "Attribute_costCenter") IS NOT NULL $queryAddition" | ForEach-Object {
+            "$($_.FullUserName) ($($_.$(Get-scupPSValue -Name "Attribute_costCenter")))<br/>"
         }
 
     }else{
