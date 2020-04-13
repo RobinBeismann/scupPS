@@ -28,14 +28,15 @@ if($operation -eq "approvaltakeoverpreview" -or $operation -eq "approvaltakeover
         $newComputer -and
         ($newComputerGUID = $newComputer.SMSUniqueIdentifier)
     ){
-        $step = 1
         Write-Host("Found old Applications ($($oldApprovals.Application -join ", ")) and the new computer $newComputerName ($newComputerGUID)")
         $oldApprovals | ForEach-Object {
+            $step = 1
                   
             #Save old Approval for usage in pipes
             $oldApproval = $_
 
             #Check if there is already and approval for this machine
+            $existingApproval = $null
             $existingApproval = $newApprovals | Where-Object { $_.ModelName -eq $oldApproval.ModelName -and $_.User -eq $oldApproval.User }
             
             #Check for the action
@@ -52,17 +53,18 @@ if($operation -eq "approvaltakeoverpreview" -or $operation -eq "approvaltakeover
 
                 Send-AdminNotification -subject "[Approval Takeover] $($_.RequestedMachine)/$($_.User): $($_.Application) Approval taken over from $oldComputerName to $newComputerName by $($authenticatedUser.FullUserName)" -body "History: $($approvalHistory | ForEach-Object { "<br/>$($_.Date): $($_.Comments)" } )"
                 $approvalHistory | ForEach-Object {
-                    
                     #Request does not yet exist, create it but set auto install to false
                     if(
-                        $_.State -eq 1 -and
+                        (
+                            ($_.State -eq 1) -or
+                            ($_.State -eq 4)
+                        ) -and
                         !$existingApproval
                     ){
                         $initialComment = "[$(Get-Date)] $($oldApprovalUser.FullUserName): $($_.Comments)"
                         Write-Host("$($newComputerName): Creating Approval for $($oldApproval.Application) from $($_.Date)")                    
                         "[Step $step] $($oldApproval.Application): Creating initial approval (Old comment: $initialComment)<br/>"
                         $step++
-                       # Invoke-CimMethod -Path "SMS_UserApplicationRequest" -Namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -Name CreateApprovedRequest -ArgumentList @($oldApproval.ModelName, $false, $newComputerGUID, $initialComment, $oldApproval.User) | Out-Null
                         Invoke-CimMethod -Namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -ComputerName (Get-scupPSValue -Name "SCCM_SiteServer") -ClassName "SMS_UserApplicationRequest" -MethodName "CreateApprovedRequest" -Arguments @{ 
                             ApplicationID = $oldApproval.ModelName
                             AutoInstall = $false
@@ -79,7 +81,7 @@ if($operation -eq "approvaltakeoverpreview" -or $operation -eq "approvaltakeover
                         $existingApproval = [wmi]"\\$(Get-scupPSValue -Name "SCCM_SiteServer")\$((Get-scupPSValue -Name "SCCM_SiteNamespace")):SMS_UserApplicationRequest.RequestGuid=`"$($existingApproval.RequestGuid)`"" #Object for object oriented calls
                         $existingApproval.Deny("System: Initial deny after migration") | Out-Null
                     }
-                                
+
                     #Request was approved before, approve it
                     $existingApproval = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "Select * From SMS_UserApplicationRequest where RequestedMachine='$newComputerName'" | Where-Object { $_.ModelName -eq $oldApproval.ModelName -and $_.User -eq $oldApproval.User }   
                     if($existingApproval){
