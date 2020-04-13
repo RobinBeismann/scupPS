@@ -1,4 +1,4 @@
-<!-- Item Name: 'Approval Deletion' -->
+<!-- Item Name: 'Approval Deletion' Item Role: 'helpdesk' -->
 
 <!-- ############################################### Includes ############################################# -->
 $( 
@@ -96,18 +96,18 @@ $(
 
 $(
 
-    if($userIsAdmin){
+    if($(Test-scupPSRole -Name "helpdesk" -User $authenticatedUser)){
         #Get Computers
 		
 		$WhereClause = $null
-		$Collection_BrowsingAllowed | ForEach-Object {
+		$((Get-scupPSValue -Name "Collection_BrowsingAllowed").Split(";")) | ForEach-Object {
 			if(!$WhereClause){
 				$WhereClause = "SMS_Collection.name LIKE `'$_`'"
 			}else{
 				$WhereClause += " OR SMS_Collection.name LIKE `'$_`'"
 			}
 		}
-        $computers = Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "
+        $computers = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "
         SELECT 
             *
         FROM

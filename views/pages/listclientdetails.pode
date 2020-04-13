@@ -1,4 +1,4 @@
-<!-- Item Name: 'List Computers' -->
+<!-- Item Name: 'List Client Details' Item Role: 'helpdesk' -->
 
 <!-- ############################################### Includes ############################################# -->
 $( 
@@ -14,6 +14,7 @@ $(
 )
 <!-- ############################################### Code ################################################# -->
 
+
 <script type="text/javascript" >
     var url = '/api';
 
@@ -24,7 +25,7 @@ $(
                 if (anHttpRequest.readyState == 4 && anHttpRequest.status == 200)
                     aCallback(anHttpRequest.responseText);
             }
-            
+
             requesttype = "GET";
 
             anHttpRequest.open( requesttype, aUrl, true );            
@@ -33,17 +34,17 @@ $(
     }
 
     function calculate(){
-        var collection = document.getElementById('collection').value;
+        var machine = document.getElementById('machine').value;
         `$('#maindatadiv').html('Retrieving, please wait..');
 
         if(
-            (collection != "notset") && 
-            (collection != "")
+            (machine != "notset") && 
+            (machine != "")
         ){                
             var client = new HttpClient();
 
-            var suburl = (url + '?operation=listcomputers' + 
-                            '&submitcollection=' + collection
+            var suburl = (url + '?operation=listclientdetails' + 
+                            '&submitrequestmachine=' + machine
                             );
                             
             client.get( suburl, function(response) {
@@ -56,23 +57,51 @@ $(
         }else{
             `$('#maindatadiv').html('Please select a device to show data.');
         }
-    }
+    }    
 </script>
 
 $(
-    if($userIsAdmin){
+    if($(Test-scupPSRole -Name "helpdesk" -User $authenticatedUser)){
+        #Get Computers
+		$WhereClause = $null
+		$((Get-scupPSValue -Name "Collection_BrowsingAllowed").Split(";")) | ForEach-Object {
+			if(!$WhereClause){
+				$WhereClause = "SMS_Collection.name LIKE `'$_`'"
+			}else{
+				$WhereClause += " OR SMS_Collection.name LIKE `'$_`'"
+			}
+		}
+		
+        $computers = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "
+        SELECT 
+            SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client 
+        FROM SMS_R_System where ResourceID in 
+            (
+                SELECT 
+                    ResourceID
+                FROM 
+                    SMS_FullCollectionMembership 
+                JOIN 
+                    SMS_Collection 
+                ON 
+                    SMS_FullCollectionMembership.CollectionID = SMS_Collection.CollectionID 
+                WHERE
+                    $WhereClause
+            )
+        " | Sort-Object -Property Name
+
         #Build Fields
         @"
         <!-- Form Name -->
-        <legend>List Client Summary</legend>
+        <legend>List Client Details</legend>
 
         <!-- Old Machine -->
-        <label class="control-label" for="dropdown-menu">Collection</label>  
-        <select class="form-control input-md" id="collection" onchange="calculate()">
+        <label class="control-label" for="dropdown-menu">Machine</label>  
+        <select class="form-control input-md" id="machine" onchange="calculate()">
         <option value = 'notset'>Please select!</option>
         $(  
-            $Collection_BrowsingAllowed | ForEach-Object {     
-                "<option value='$($_)'>$($_)</option>"
+            $computers | ForEach-Object {     
+                "<option value='$($_.Name)'>$($_.Name)</option>"
             }
         )
         </select>
@@ -80,7 +109,7 @@ $(
         <div class="row justify-content-center">
             <div class="row">
                 <div id="maindatadiv">
-                    Client summary will be shown when device is selected.
+                    Client details will be shown when device is selected.
                 </div>
             </div>
         </div>

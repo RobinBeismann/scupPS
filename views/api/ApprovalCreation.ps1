@@ -1,10 +1,3 @@
-$global:log = ""
-
-function Custom-Log($string){
-    $log += ([string](Get-Date) + ": $string")
-    return $string
-}
-
 function Get-CMAppApprovalHistory($requestObject){
     ($requestObject | Get-CimInstance).RequestHistory | ForEach-Object {
     
@@ -22,10 +15,10 @@ $requestorMachineName = $Data.Query.submitrequestmachine
 $requestorUser = $Data.Query.submitrequestuser
 $requestorApplication = $Data.Query.submitrequestapplication
 
-if($operation -eq "approvalcreationpreview" -or $operation -eq "approvalcreation" -and $UserIsAdmin){
+if($operation -eq "approvalcreationpreview" -or $operation -eq "approvalcreation" -and $(Test-scupPSRole -Name "helpdesk" -User $authenticatedUser)){
     
-    $requestorMachine = (Get-PodeState -Name "cache_Machines").$requestorMachineName
-    $existingApproval = Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "Select * From SMS_UserApplicationRequest WHERE RequestedMachine='$requestorMachineName' AND ModelName = '$requestorApplication'" | Get-CimInstance
+    $requestorMachine = (Get-scupPSMachines).$requestorMachineName
+    $existingApproval = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "Select * From SMS_UserApplicationRequest WHERE RequestedMachine='$requestorMachineName' AND ModelName = '$requestorApplication'" | Get-CimInstance
     $existingApproval = $existingApproval | Where-Object { $_.UserSid -eq $requestorUser }
 
     if(
@@ -48,7 +41,7 @@ if($operation -eq "approvalcreationpreview" -or $operation -eq "approvalcreation
             
             if($existingApproval){
                 "Approval already exists, force approving it as admin"
-                $existingApproval = [wmi]"\\$SCCMServer\$($SCCMNameSpace):SMS_UserApplicationRequest.RequestGuid=`"$($existingApproval.RequestGuid)`"" #Object for object oriented calls
+                $existingApproval = [wmi]"\\$(Get-scupPSValue -Name "SCCM_SiteServer")\$((Get-scupPSValue -Name "SCCM_SiteNamespace")):SMS_UserApplicationRequest.RequestGuid=`"$($existingApproval.RequestGuid)`"" #Object for object oriented calls
                 $existingApproval.Approve($comment) | Out-Null
             }else{
                 "Approval does not exists, created new approval as admin"
@@ -57,9 +50,9 @@ if($operation -eq "approvalcreationpreview" -or $operation -eq "approvalcreation
                     AutoInstall = $true
                     ClientGUID = $requestorMachineGuid
                     Comments = $comment
-                    Username = (Get-PodeState -Name "cache_Users").$requestorUser.UniqueUserName
+                    Username = (Get-scupPSUsers).$requestorUser.UniqueUserName
                 };
-                Invoke-CimMethod -Namespace $SCCMNameSpace -ComputerName $SCCMServer -ClassName "SMS_UserApplicationRequest" -MethodName "CreateApprovedRequest" -Arguments $args
+                Invoke-CimMethod -Namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -ComputerName (Get-scupPSValue -Name "SCCM_SiteServer") -ClassName "SMS_UserApplicationRequest" -MethodName "CreateApprovedRequest" -Arguments $args
             }           
         }
     }

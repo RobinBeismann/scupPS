@@ -1,10 +1,3 @@
-$global:log = ""
-
-function Custom-Log($string){
-    $log += ([string](Get-Date) + ": $string")
-    return $string
-}
-
 #Request Information
 if(!$requestorMachine){
     $requestorMachine = $Data.Query.submitrequestmachine
@@ -44,9 +37,9 @@ function Generate-Table($arr){
     '</table><br/>'
 }
 
-if($operation -eq "listclientdetails" -and $UserIsAdmin){
+if($operation -eq "listclientdetails" -and $(Test-scupPSRole -Name "helpdesk" -User $authenticatedUser)){
     
-    $PCInfo = Get-CimInstance -ComputerName $SCCMServer -Namespace $SCCMNameSpace -Query (
+    $PCInfo = Get-CimInstance -ComputerName (Get-scupPSValue -Name "SCCM_SiteServer") -Namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -Query (
     "SELECT 
         *
     FROM

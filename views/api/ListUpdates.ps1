@@ -1,16 +1,9 @@
-$global:log = ""
-
-function Custom-Log($string){
-    $log += ([string](Get-Date) + ": $string")
-    return $string
-}
-
 #Request Information
 $requestorMachine = $Data.Query.submitrequestmachine
 
-if($operation -eq "listupdates" -and $UserIsAdmin){
+if($operation -eq "listupdates" -and $(Test-scupPSRole -Name "helpdesk" -User $authenticatedUser)){
     
-    $updates = Get-CimInstance -ComputerName $SCCMServer -Namespace $SCCMNameSpace -Query ("
+    $updates = Get-CimInstance -ComputerName (Get-scupPSValue -Name "SCCM_SiteServer") -Namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -Query ("
         SELECT 
             SMS_R_System.Name,SMS_G_System_QUICK_FIX_ENGINEERING.HotFixID,SMS_G_System_QUICK_FIX_ENGINEERING.Description,SMS_G_System_QUICK_FIX_ENGINEERING.Caption,SMS_G_System_QUICK_FIX_ENGINEERING.Timestamp
         FROM

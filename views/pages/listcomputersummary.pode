@@ -1,4 +1,4 @@
-<!-- Item Name: 'List Software' -->
+<!-- Item Name: 'List Computer Summary' Item Role: 'helpdesk' -->
 
 <!-- ############################################### Includes ############################################# -->
 $( 
@@ -13,7 +13,6 @@ $(
     }
 )
 <!-- ############################################### Code ################################################# -->
-
 
 <script type="text/javascript" >
     var url = '/api';
@@ -34,17 +33,17 @@ $(
     }
 
     function calculate(){
-        var machine = document.getElementById('machine').value;
+        var collection = document.getElementById('collection').value;
         `$('#maindatadiv').html('Retrieving, please wait..');
 
         if(
-            (machine != "notset") && 
-            (machine != "")
+            (collection != "notset") && 
+            (collection != "")
         ){                
             var client = new HttpClient();
 
-            var suburl = (url + '?operation=listsoftware' + 
-                            '&submitrequestmachine=' + machine
+            var suburl = (url + '?operation=listcomputersummary' + 
+                            '&submitcollection=' + collection
                             );
                             
             client.get( suburl, function(response) {
@@ -63,57 +62,28 @@ $(
     
 </script>
 
-
 $(
-    if($userIsAdmin){
-        #Get Computers
-		$WhereClause = $null
-		$Collection_BrowsingAllowed | ForEach-Object {
-			if(!$WhereClause){
-				$WhereClause = "SMS_Collection.name LIKE `'$_`'"
-			}else{
-				$WhereClause += " OR SMS_Collection.name LIKE `'$_`'"
-			}
-		}
-		
-        $computers = Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "
-        SELECT 
-            SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client 
-        FROM SMS_R_System where ResourceID in 
-            (
-                SELECT 
-                    ResourceID
-                FROM 
-                    SMS_FullCollectionMembership 
-                JOIN 
-                    SMS_Collection 
-                ON 
-                    SMS_FullCollectionMembership.CollectionID = SMS_Collection.CollectionID 
-                WHERE
-                    $WhereClause
-            )
-        " | Sort-Object -Property Name
-
+    if($(Test-scupPSRole -Name "helpdesk" -User $authenticatedUser)){
         #Build Fields
         @"
         <!-- Form Name -->
-        <legend>List Software</legend>
-
+        <legend>List Client Summary</legend>
+    
         <!-- Old Machine -->
-        <label class="control-label" for="dropdown-menu">Machine</label>  
-        <select class="form-control input-md" id="machine" onchange="calculate()">
+        <label class="control-label" for="dropdown-menu">Collection</label>  
+        <select class="form-control input-md" id="collection" onchange="calculate()">
         <option value = 'notset'>Please select!</option>
         $(  
-            $computers | ForEach-Object {     
-                "<option value='$($_.Name)'>$($_.Name)</option>"
+            $((Get-scupPSValue -Name "Collection_BrowsingAllowed").Split(";")) | ForEach-Object {     
+                "<option value='$($_)'>$($_)</option>"
             }
         )
         </select>
             
         <div class="row justify-content-center">
-            <div class="col-auto">
+            <div class="row">
                 <div id="maindatadiv">
-                    Software will be shown when device is selected.
+                    Client summary will be shown when device is selected.
                 </div>
             </div>
         </div>
@@ -121,5 +91,7 @@ $(
     }else{
         "You don't have access to this page"
     }
+
 )
+
 <!-- ############################################### End ################################################## -->

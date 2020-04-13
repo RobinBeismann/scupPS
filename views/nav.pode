@@ -27,8 +27,8 @@
                 <a href="#" class="d-block">
                 $(
                     if($Data.Auth.User.Name){
-                        if($userIsAdmin){
-                            "Logged in as $($Data.Auth.User.Name) (Portal Admin)"
+                        if($roles = Test-scupPSRole -User $authenticatedUser){
+                            "Logged in as $($Data.Auth.User.Name) (Roles: $($roles -join ", "))"
                         }else{
                             "Logged in as $($Data.Auth.User.Name)"
                         }
@@ -59,7 +59,7 @@
         style="opacity: .8"
         />
     -->
-        <span class="brand-text font-weight-light">$siteTitle</span>
+        <span class="brand-text font-weight-light">$(Get-scupPSValue -Name "siteTitle")</span>
     </a>
     <!-- Sidebar -->
     <div class="sidebar">
@@ -77,37 +77,39 @@
             <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
             <span>User Area</span>
             </h6>
-
+            
             $(
-                (Get-PodeState -Name "navItems").GetEnumerator() | Where-Object { $_.Value -notlike "admin-*" } | ForEach-Object {       
+                (Get-PodeState -Name "navItems").GetEnumerator() | Where-Object { !$_.Value.Role } | ForEach-Object {       
                     "                        
                     <li class=`"nav-item`">
-                        <a id=`"nav-$($_.Value)`" href=`"?page=$($_.Value)`" class=`"nav-link`">
+                        <a id=`"nav-$($_.Value.url)`" href=`"?page=$($_.Value.url)`" class=`"nav-link`">
                             <i class=`"nav-icon`"></i>
                             <p>$($_.Name)</p>
                         </a>
                     </li>
                     "
                 }
-            )
-            
-            $(
-                if($userIsAdmin){
-                    '<h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
-                    <span>Administrative</span>
-                    </h6>'
-                    (Get-PodeState -Name "navItems").GetEnumerator() | Where-Object { $_.Value -like "admin-*" } | ForEach-Object {         
-                        "                        
-                        <li class=`"nav-item`">
-                            <a id=`"nav-$($_.Value)`" href=`"?page=$($_.Value)`" class=`"nav-link`">
-                                <i class=`"nav-icon`"></i>
-                                <p>$($_.Name)</p>
-                            </a>
-                        </li>
-                        "
+
+                $categories = (Get-PodeState -Name "navItems").GetEnumerator() | ForEach-Object { $_.Value.Role } | Select-Object -Unique
+                $categories.GetEnumerator() | ForEach-Object {
+                    $role = $_
+                    if(Test-scupPSRole -Name $role -User $authenticatedUser){
+                        "<h6 class=`"sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted`">
+                        <span>$_</span>
+                        </h6>"
+                        (Get-PodeState -Name "navItems").GetEnumerator() | Where-Object { $_.Value.role -eq $role} | ForEach-Object {         
+                            "                        
+                            <li class=`"nav-item`">
+                                <a id=`"nav-$($_.Value.url)`" href=`"?page=$($_.Value.url)`" class=`"nav-link`">
+                                    <i class=`"nav-icon`"></i>
+                                    <p>$($_.Name)</p>
+                                </a>
+                            </li>
+                            "
+                        }
                     }
                 }
-            )      
+            ) 
         </li> 
         </ul>
         </nav>

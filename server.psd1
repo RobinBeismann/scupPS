@@ -5,4 +5,9 @@
             Include = @("*.ps1", "*.pode")
         }
     }
+    Web = @{
+        TransferEncoding = @{
+            Default = "gzip"
+        }
+    }
 }

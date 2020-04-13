@@ -20,7 +20,7 @@ scupPS already delivers a web.config which includes the required settings:
 Once done, you can setup IIS in the normal way:
 
 * Create an Application Pool
-  * Chose an Application Pool Identity that has read/write access the Application Approval Class in MEMCM/SCCM and also basic read access to the hardware inventory for the update and software list.
+  * Chose an Application Pool Identity that has read/write access the Application Approval Class in MEMCM/SCCM and also basic read access to the hardware inventory and device/user classes for the update and software list.
   * If you wish to use the builtin task sequence monitor, then you also need to give that account read access to the task sequenceclass 
 * Create a website, and set the physical path to the root directory of your scupPS folder
 * Setup a binding (something like HTTP on *:8080 - IP Address can be anything), SSL recommended

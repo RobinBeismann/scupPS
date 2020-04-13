@@ -1,27 +1,20 @@
-$global:log = ""
-
-function Custom-Log($string){
-    $log += ([string](Get-Date) + ": $string")
-    return $string
-}
-
 #Request Information
 $requestID = $Data.Query.submitrequestid
 $denyreason = $Data.Query.submitdenyreason
 
 $currentDate = [string](Get-Date -Format "yyyy\/MM\/dd hh:MM")
 
-$localSender = $smtpSender.Replace("%SenderDisplayName%","$approverDisplayNameV1 (Approval Portal)")
+$localSender = $(Get-scupPSValue -Name "smtpSender").Replace("%SenderDisplayName%","$approverDisplayNameV1 (Approval Portal)")
 
 if(
     ($operation -eq "approverequest") -or
     ($operation -eq "denyrequest") -or
     ($operation -eq "revokerequest")
 ){
-    $reqObj = Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "Select * From SMS_UserApplicationRequest where RequestGUID='$requestID'" | Get-CimInstance
-    $reqObjRequestor = (Get-PodeState -Name "cache_Users").($reqObj.UserSid)
+    $reqObj = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "Select * From SMS_UserApplicationRequest where RequestGUID='$requestID'" | Get-CimInstance
+    $reqObjRequestor = (Get-scupPSUsers).($reqObj.UserSid)
     $reqObjApprover = $authenticatedUser
-    $reqObjOO = [wmi]"\\$SCCMServer\$($SCCMNameSpace):SMS_UserApplicationRequest.RequestGuid=`"$requestId`"" #Object for object oriented calls
+    $reqObjOO = [wmi]"\\$(Get-scupPSValue -Name "SCCM_SiteServer")\$((Get-scupPSValue -Name "SCCM_SiteNamespace")):SMS_UserApplicationRequest.RequestGuid=`"$requestId`"" #Object for object oriented calls
     
     #Check if requestor has the competence to approve requests for this costcenter
     if(!(Test-ApproveCompetence -User $reqObjRequestor -Manager $reqObjApprover)){
@@ -113,11 +106,11 @@ if(
         $userText = $userText.Replace("%softwareTitle%",$softwareTitle)
         $userText = $userText.Replace("%requestorMachine%",$requestorMachine)
         $userText = $userText.Replace("%denyreason%",$denyreason)
-        $userText = $userText.Replace("%mailSignature%",$smtpSignature)
+        $userText = $userText.Replace("%mailSignature%",$(Get-scupPSValue -Name "smtpSignature"))
         $userText = Replace-HTMLVariables -Value $userText
 
         if($requestorMail){
-            Send-CustomMailMessage -SmtpServer $smtpServer -from $localSender -ReplyTo $smtpReplyTo -subject $mailSubject -to ($requestorMail,$approverMail) -CC $smtpAdditionalRecipient -body $userText -BodyAsHtml
+            Send-CustomMailMessage -SmtpServer $(Get-scupPSValue -Name "smtpServer") -from $localSender -ReplyTo $(Get-scupPSValue -Name "smtpReplyTo") -subject $mailSubject -to ($requestorMail,$approverMail) -CC $(Get-scupPSValue -Name "smtpAdditionalRecipient") -body $userText -BodyAsHtml
         }
     }
 

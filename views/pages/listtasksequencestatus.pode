@@ -1,4 +1,4 @@
-<!-- Item Name: 'List Task Sequence Status' -->
+<!-- Item Name: 'List Task Sequence Status' Item Role: 'helpdesk' -->
 
 <!-- ############################################### Includes ############################################# -->
 $( 
@@ -64,9 +64,9 @@ setInterval(function(){
 </script>
 
 $(
-    if($userIsAdmin){
+    if($(Test-scupPSRole -Name "helpdesk" -User $authenticatedUser)){
         #Get Computers
-        $ts = Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "
+        $ts = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "
             SELECT 
                 * 
             FROM SMS_TaskSequenceExecutionStatus

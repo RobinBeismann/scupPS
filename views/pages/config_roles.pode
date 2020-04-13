@@ -1,0 +1,172 @@
+<!-- Item Name: 'Configuration - Roles'  Item Role: 'admin' -->
+<!-- ############################################### Includes ############################################# -->
+$( 
+    #Include Config
+    . ".\views\includes\core\config.ps1"
+    . ".\views\includes\core\userLib.ps1"
+    
+    #Include Includes    
+    Get-ChildItem -Path "views\includes\lib" -File -Include "*.ps1" -Recurse | ForEach-Object {
+        "<!-- Including: $($_.FullName) -->"
+        . $_.FullName
+    }
+)
+<!-- ############################################### Code ################################################# -->
+
+<!-- jQuery -->
+<script src="assets/jquery/jquery.min.js"></script>
+<script src="assets/jquery-steps/jquery.steps.min.js"></script>
+<script src="assets/jquery-validation/jquery.validate.min.js"></script>
+<style>
+/* Style the form */
+#regForm {
+  background-color: #ffffff;
+  margin: 100px auto;
+  padding: 40px;
+  width: 70%;
+  min-width: 300px;
+}
+
+/* Style the input fields */
+input {
+  padding: 10px;
+  width: 100%;
+  font-size: 17px;
+  font-family: Raleway;
+  border: 1px solid #aaaaaa;
+}
+select {
+    padding: 10px;
+    width: 100%;
+    font-size: 17px;
+    font-family: Raleway;
+    border: 1px solid #aaaaaa;
+}
+ 
+
+/* Mark as invalid boxes that gets an error on validation: */
+input.invalid {
+  background-color: #ffdddd;
+}
+select.invalid {
+  background-color: #ffdddd;
+}
+
+/* Hide all steps by default: */
+.tab {
+  display: none;
+}
+
+/* Make circles that indicate the steps of the form: */
+.step {
+  height: 15px;
+  width: 15px;
+  margin: 0 2px;
+  background-color: #bbbbbb;
+  border: none;
+  border-radius: 50%;
+  display: inline-block;
+  opacity: 0.5;
+}
+
+/* Mark the active step: */
+.step.active {
+  opacity: 1;
+}
+
+/* Mark the steps that are finished and valid: */
+.step.finish {
+  background-color: #4CAF50;
+}
+</style>
+
+<script type="text/javascript">
+
+    var url = '/api';
+    var currentTab = 0; // Current tab is set to be the first tab (0)
+    showTab(currentTab); // Display the current tab
+
+    var HttpClient = function() {
+    this.get = function(aUrl, aCallback) {
+            var anHttpRequest = new XMLHttpRequest();
+            anHttpRequest.onreadystatechange = function() { 
+                if (anHttpRequest.readyState == 4 && anHttpRequest.status == 200)
+                    aCallback(anHttpRequest.responseText);
+            }
+            
+            requesttype = "GET";
+            
+            anHttpRequest.open( requesttype, aUrl, true );            
+            anHttpRequest.send( null );
+        }
+    }
+    
+
+    function showTab(n) {
+        // This function will display the specified tab of the form ...
+        var x = document.getElementsByClassName("tab");
+        
+        x[n].style.display = "block";
+    }
+
+
+    function verify(fieldName){
+        var value = document.getElementById(fieldName).value;
+        var suburl = (url + '?operation=roles&fieldName=' + encodeURIComponent(fieldName) + '&fieldValue=' + encodeURIComponent(value));       
+        var client = new HttpClient();
+                        
+        client.get( suburl, function(response) {
+                if(!response || response.indexOf("True")<1){      
+                    document.getElementById(fieldName).className = " invalid";
+                }else{
+                    document.getElementById(fieldName).className = "";
+                }           
+        });
+    }
+</script>
+
+$(
+if(
+    ((Get-ServerReadyness) -eq $true) -and
+    (
+        ($user = Get-CimInstance -Computer (Get-scupPSValue -Name "SCCM_SiteServer") -Namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -Query "select * from sms_r_user where DistinguishedName='$($Data.Auth.User.DistinguishedName)'") -and
+        (Get-scupPSValue -Name "scupPSAdminGroup" -in $user.UserGroupName)
+    )
+){
+    #Build Fields
+    @"
+    <!-- Form Name -->
+    <legend>Roles</legend> 
+    <!-- One "tab" for each step in the form: -->
+    <div class="tab"></td>
+    
+    $(
+        $groups = Get-CimInstance -Computer (Get-scupPSValue -Name "SCCM_SiteServer") -Namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -Query "SELECT Name FROM SMS_R_UserGroup"
+
+        (Get-scupPSRole).GetEnumerator() | ForEach-Object {
+            $val = [System.Net.WebUtility]::HtmlEncode($_.Value)
+            "
+                <p>$($_.Name): 
+                <select class=`"form-control input-md`" id=`"$($_.Name)`" onchange=`"verify('$($_.Name)')`">
+                $(  
+                    $groups.GetEnumerator() | Where-Object { $_.Name -ne $_.Value } | ForEach-Object {     
+                        "<option value='$($_.Name)'>$($_.Name)</option>"
+                    }
+                )
+                <option selected=`"selected`" value='$($_.Value)'>$($_.Value)</option>
+                </select>
+            "
+        }
+        
+    )
+    </div>
+    <script type=`"text/javascript`">
+        adminField = document.getElementById("admin");        
+        admin.disabled = true;
+    </script>
+"@
+}else{
+    "You don't have access to this page"
+}
+)
+<!-- ############################################### End ################################################## -->

@@ -6,6 +6,15 @@ $(
     #Include Config
     . ".\views\includes\core\config.ps1"
     . ".\views\includes\core\userLib.ps1"
+
+    #Check if this page was loaded through the page loader, otherwise break
+    if(
+        !$Data -or
+        !($Data.LoadedUsingPageLoader) -or
+        ($Data.LoadedUsingPageLoader -eq $false)    
+    ){
+        return $false
+    }
     
     #Include Includes    
     Get-ChildItem -Path "views\includes\lib" -File -Include "*.ps1" -Recurse | ForEach-Object {
@@ -14,7 +23,7 @@ $(
     }
 )
 <!-- ############################################### Code ################################################# -->
-<script type="text/javascript" >
+<script type="text/javascript">
 var url = '/api';
 
 var HttpClient = function() {
@@ -81,10 +90,10 @@ function handleRequest(requestAction,requestID,userFirstname,userLastname,userMa
 
 $(
     if(
-        $authenticatedUser -and 
-        ($userIsCostCenterManager -or $userIsAdmin)
+        $authenticatedUser -and
+        $managedCostCenters
     ){ 
-    
+        
         "<br/><br/>"
         '<style type="text/css">
         .tg  {border-collapse:collapse;border-spacing:0;}
@@ -96,13 +105,13 @@ $(
 
         $ShowApprovals = $Data.Query['ShowApprovals']        
         if($ShowApprovals -ne "history"){
-            $queryAddition = "AND SMS_Application.CurrentState='1' AND SMS_Application.CurrentState!='2'"
+            $queryAddition = "and CurrentState='1' and CurrentState!='2'"
         }else{        
-            $queryAddition = "AND SMS_Application.CurrentState!='1' AND SMS_Application.CurrentState!='2'"
+            $queryAddition = "and CurrentState!='1' and CurrentState!='2'"
         }
 
         #Get approval requests
-        $openRequests = Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "
+        $openRequests = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "
         SELECT 
             SMS_UserApplicationRequest.* 
         FROM 
@@ -117,12 +126,11 @@ $(
             $queryAddition
         " | Get-CimInstance
         $managedRequests = @()
-
         #Process
         $openRequests | ForEach-Object {        
             #Check if our current user is responsible for this users' costcenter
             if(
-                (Test-ApproveCompetence -User (Get-PodeState -Name "cache_Users").($_.UserSid) -Manager $authenticatedUser)
+                (Test-ApproveCompetence -User (Get-scupPSUsers).($_.UserSid) -Manager $authenticatedUser)
             ){                
                 #Yes he is -> Add this request to his table
                 $managedRequests += $_
@@ -147,14 +155,14 @@ $(
         if(!$ShowApprovals -or $ShowApprovals -ne "history"){
 
             $managedRequests | ForEach-Object {
-                $cmRessource = (Get-PodeState -Name "cache_Users").($_.UserSid)
+                $cmRessource = (Get-scupPSUsers).($_.UserSid)
                 "<tr>
                     <td scope='col'>$($cmRessource.FullUserName)</td>
-                    <td scope='col'>$($cmRessource.$Attribute_costCenter)</td>
+                    <td scope='col'>$($cmRessource.$(Get-scupPSValue -Name "Attribute_costCenter"))</td>
                     <td scope='col'><a href='mailto:$($cmRessource.Mail)'>$($cmRessource.Mail)</a></td>
                     <td scope='col'>$($_.Application)</td>
                     <td scope='col'>$($_.RequestedMachine)</td>
-                    <td scope='col'>$(Replace-HTMLVariables( ((Get-PodeState -Name "cache_Applications")[$_.Modelname]).LocalizedDescription))</td>
+                    <td scope='col'>$(Replace-HTMLVariables( ((Get-scupPSApplications)[$_.Modelname]).LocalizedDescription))</td>
                     <td scope='col'>$($_.Comments)</td>
                     <td scope='col'>
                         <button id='btn_approve_$($_.RequestGuid)' name='btn_approve' class='btn btn-primary' onclick='handleRequest(`"approverequest`",`"$($_.RequestGuid)`"`)'>Approve</button>
@@ -167,14 +175,14 @@ $(
         }else{
             #Build history request table
             $managedRequests | ForEach-Object {
-                $cmRessource = (Get-PodeState -Name "cache_Users").($_.UserSid)
+                $cmRessource = (Get-scupPSUsers).($_.UserSid)
                 "<tr>
                     <td scope='col'>$($cmRessource.FullUserName)</td>
-                    <td scope='col'>$($cmRessource.$Attribute_costCenter)</td>
+                    <td scope='col'>$($cmRessource.$(Get-scupPSValue -Name "Attribute_costCenter"))</td>
                     <td scope='col'><a href='mailto:$($cmRessource.Mail)'>$($cmRessource.Mail)</a></td>
                     <td scope='col'>$($_.Application)</td>
                     <td scope='col'>$($_.RequestedMachine)</td>
-                    <td scope='col'>$(Replace-HTMLVariables( ((Get-PodeState -Name "cache_Applications")[$_.Modelname]).LocalizedDescription))</td>
+                    <td scope='col'>$(Replace-HTMLVariables( ((Get-scupPSApplications)[$_.Modelname]).LocalizedDescription))</td>
                     <td scope='col'>$($_.Comments)</td>
                     <td scope='col'>
                     <button id='btn_approve_$($_.RequestGuid)' name='btn_approve' class='btn btn-primary' onclick='handleRequest(`"approverequest`",`"$($_.RequestGuid)`"`)'>Approve</button>
@@ -209,9 +217,8 @@ $(
             '</table><br/>'
         }
     }else{
-        $doubleBackslashUsername = $authenticatedUser.UniqueUserName.Replace("\","\\")
         #Get approval requests
-        $managedRequests = Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "Select * From SMS_UserApplicationRequest WHERE User = '$doubleBackslashUsername'"
+        $managedRequests = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "Select * From SMS_UserApplicationRequest WHERE User = '$doubleBackslashUsername'"
         
         #Build request table
         '
@@ -228,7 +235,7 @@ $(
             "<tr>
                 <td scope='col'>$($_.Application)</td>
                 <td scope='col'>$($_.RequestedMachine)</td>
-                <td scope='col'>$(Replace-HTMLVariables( ((Get-PodeState -Name "cache_Applications")[$_.Modelname]).LocalizedDescription))</td>
+                <td scope='col'>$(Replace-HTMLVariables( ((Get-scupPSApplications)[$_.Modelname]).LocalizedDescription))</td>
                 <td scope='col'>$($_.Comments)</td>
             </tr>
             "

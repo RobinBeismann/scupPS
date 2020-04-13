@@ -1,18 +1,10 @@
-$global:log = ""
-
-function Custom-Log($string){
-    $log += ([string](Get-Date) + ": $string")
-    return $string
-}
-
-
 #Request Information
 $requestorMachine = $Data.Query.submitrequestmachine
 $reason = $Data.Query.submitdeletereason
 
-if($operation -eq "approvalclearpreview" -or $operation -eq "approvalclear" -and $UserIsAdmin){
+if($operation -eq "approvalclearpreview" -or $operation -eq "approvalclear" -and $(Test-scupPSRole -Name "helpdesk" -User $authenticatedUser)){
     Write-Host("Receiving application approvals for $requestorMachine")
-    $oldApprovals = Get-CimInstance -namespace $SCCMNameSpace -computer $SCCMServer -query "Select * From SMS_UserApplicationRequest where RequestedMachine='$requestorMachine'"
+    $oldApprovals = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "Select * From SMS_UserApplicationRequest where RequestedMachine='$requestorMachine'"
     
 
     if(
@@ -27,7 +19,7 @@ if($operation -eq "approvalclearpreview" -or $operation -eq "approvalclear" -and
                 "$($_.User): $($_.Application)</br>"
                 
             }elseif($operation -eq "approvalclear" -and $reason){
-                $reqObjOO = [wmi]"\\$SCCMServer\$($SCCMNameSpace):SMS_UserApplicationRequest.RequestGuid=`"$($_.RequestGuid)`"" #Object for object oriented calls
+                $reqObjOO = [wmi]"\\$(Get-scupPSValue -Name "SCCM_SiteServer")\$((Get-scupPSValue -Name "SCCM_SiteNamespace")):SMS_UserApplicationRequest.RequestGuid=`"$($_.RequestGuid)`"" #Object for object oriented calls
                 Write-Host("Deleting Approval: $($_.User): $($_.Application)")
                 "Deleting Approval: $($_.User): $($_.Application)</br>"
                 Send-AdminNotification -subject "[Approval Deletion] $($_.RequestedMachine)/$($_.User): $($_.Application) Approval deleted by $($authenticatedUser.FullUserName)" -body "Reason was `"$reason`""
