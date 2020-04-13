@@ -125,7 +125,7 @@ Add-PodeSchedule -Name 'migrateSupersededApprovals' -Cron '@hourly' -OnStart -Sc
                                 RequestedMachine = '$($oldApproval.RequestedMachine)'
                         "
                         $existingApproval = [wmi]"\\$(Get-scupPSValue -Name "SCCM_SiteServer")\$($(Get-scupPSValue -Name "SCCM_SiteNamespace")):SMS_UserApplicationRequest.RequestGuid=`"$($existingApproval.RequestGuid)`"" #Object for object oriented calls
-                        $existingApproval.Deny("System: This has been upgraded. If your previous request was not approved, please re-request it.") | Out-Null
+                        $existingApproval.Deny("System: This Application has been updated. If your previous request was not yet approved, please re-request it. Existing approvals were migrated.") | Out-Null
                     }
                                 
                     #Request was approved before, approve it
