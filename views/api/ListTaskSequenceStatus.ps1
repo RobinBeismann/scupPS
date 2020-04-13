@@ -1,7 +1,7 @@
 #Request Information
 $requestorMachine = $Data.Query.submitrequestmachine
 
-if($operation -eq "listtasksequencestatus" -and $UserIsAdmin -and $requestorMachine){
+if($operation -eq "listtasksequencestatus" -and $(Test-scupPSRole -Name "helpdesk" -User $authenticatedUser) -and $requestorMachine){
     
     $ts = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "
     SELECT 

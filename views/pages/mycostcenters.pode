@@ -22,7 +22,7 @@ $(
         $managedCostCenters = $managedCostCenters.Split(";")
 
         "You're a manager of the following costcenters:<br/><br/>"
-        if($userIsAdmin){
+        if($(Test-scupPSRole -Name "helpdesk" -User $authenticatedUser)){
             "You're admin and can thus manage all costcenters."
         }else{
             $managedCostCenters -join "<br>"

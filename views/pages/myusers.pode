@@ -32,7 +32,7 @@ $(
                 $queryAddition += " or $(Get-scupPSValue -Name "Attribute_costCenter")='$_'"
             }
         }
-        if($userIsAdmin){
+        if($(Test-scupPSRole -Name "helpdesk" -User $authenticatedUser)){
             $queryAddition = $null
         }
 

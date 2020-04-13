@@ -27,8 +27,8 @@
                 <a href="#" class="d-block">
                 $(
                     if($Data.Auth.User.Name){
-                        if($userIsAdmin){
-                            "Logged in as $($Data.Auth.User.Name) (Portal Admin)"
+                        if($roles = Test-scupPSRole -User $authenticatedUser){
+                            "Logged in as $($Data.Auth.User.Name) (Roles: $($roles -join ", "))"
                         }else{
                             "Logged in as $($Data.Auth.User.Name)"
                         }

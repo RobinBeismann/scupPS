@@ -10,16 +10,7 @@ if(
     #$AuthenticatedUser = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -Query "select * from sms_r_user where DistinguishedName='$($Data.Auth.User.DistinguishedName)'"
 
 #Check if the user is admin and if so set the variable, other pages may rely on this
-$userIsAdmin = $null
 $userIsCostcenterManager = $null
-
-if(
-    $AuthenticatedUser -and 
-    $AuthenticatedUser.UserGroupName -and 
-    ($(Get-scupPSValue -Name "scupPSAdminGroup") -in $AuthenticatedUser.UserGroupName)
-){
-    $userIsAdmin = $true
-}
 
 #Build up managed costcenter tables
 $managedCostCenters = $null
@@ -81,13 +72,21 @@ function Set-scupPSRole($Name,$Value){
 Set-scupPSRole -Name "admin" -Value (Get-scupPSValue -Name "scupPSAdminGroup")
 
 function Test-scupPSRole($Name,$User){
-    if(
-        !$Name -or 
-        !$User -or 
-        !($role = Get-scupPSRole -Name $Name)
-    ){
-        return $false
-    }   
-    Write-Host($user.UserGroupName -join ";")
-    return ($role -in $user.UserGroupName)
+    if($Name){
+        if(
+            !$Name -or
+            !$User -or 
+            !($role = Get-scupPSRole -Name $Name)
+        ){
+            return $false
+        }   
+        Write-Host($user.UserGroupName -join ";")
+        return ($role -in $user.UserGroupName)
+    }else{
+        (Get-scupPSRole).GetEnumerator() | ForEach-Object {
+            if(Test-scupPSRole -User $User -Name $_.Name){
+                $_.Name
+            }
+        }
+    }    
 }

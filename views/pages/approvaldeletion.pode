@@ -96,7 +96,7 @@ $(
 
 $(
 
-    if($userIsAdmin){
+    if($(Test-scupPSRole -Name "helpdesk" -User $authenticatedUser)){
         #Get Computers
 		
 		$WhereClause = $null

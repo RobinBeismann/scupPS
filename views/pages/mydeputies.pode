@@ -53,12 +53,12 @@ $(
         "The following managers can also approve requests for your costcenters:<br/><br/>"
 
         #Remind the Admins
-        if($userIsAdmin){
+        if($(Test-scupPSRole -Name "helpdesk" -User $authenticatedUser)){
             "You're admin and can thus manage all costcenters.<br/><br/>"
         }
 
         #User is admin -> show all costcenters
-        if($userIsAdmin){
+        if($(Test-scupPSRole -Name "helpdesk" -User $authenticatedUser)){
             $usermanagedCostcenters = $managersPerCostCenter
         #User is not admin -> show his costcenters
         }else{

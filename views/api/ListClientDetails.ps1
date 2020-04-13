@@ -37,7 +37,7 @@ function Generate-Table($arr){
     '</table><br/>'
 }
 
-if($operation -eq "listclientdetails" -and $UserIsAdmin){
+if($operation -eq "listclientdetails" -and $(Test-scupPSRole -Name "helpdesk" -User $authenticatedUser)){
     
     $PCInfo = Get-CimInstance -ComputerName (Get-scupPSValue -Name "SCCM_SiteServer") -Namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -Query (
     "SELECT 

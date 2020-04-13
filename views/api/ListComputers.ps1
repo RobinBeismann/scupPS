@@ -1,7 +1,7 @@
 #Request Information
 $collection = $Data.Query.submitcollection
 
-if($operation -eq "listcomputers" -and $UserIsAdmin -and $collection -and ($collection -in $((Get-scupPSValue -Name "Collection_BrowsingAllowed").Split(";") ))){
+if($operation -eq "listcomputers" -and $(Test-scupPSRole -Name "helpdesk" -User $authenticatedUser) -and $collection -and ($collection -in $((Get-scupPSValue -Name "Collection_BrowsingAllowed").Split(";") ))){
     
     #Get Computers
     $wmiComputers = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "

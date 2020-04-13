@@ -1,7 +1,7 @@
 #Request Information
 $requestorMachine = $Data.Query.submitrequestmachine
 
-if($operation -eq "listupdates" -and $UserIsAdmin){
+if($operation -eq "listupdates" -and $(Test-scupPSRole -Name "helpdesk" -User $authenticatedUser)){
     
     $updates = Get-CimInstance -ComputerName (Get-scupPSValue -Name "SCCM_SiteServer") -Namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -Query ("
         SELECT 

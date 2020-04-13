@@ -65,7 +65,7 @@ $(
 
 $(
 
-if($userIsAdmin){
+if($(Test-scupPSRole -Name "helpdesk" -User $authenticatedUser)){
     #Get Computers
 	$WhereClause = $null
 	$((Get-scupPSValue -Name "Collection_BrowsingAllowed").Split(";")) | ForEach-Object {

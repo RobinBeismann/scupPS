@@ -15,7 +15,7 @@ $(
 <!-- ############################################### Code ################################################# -->
 
 $(
-    if($UserIsAdmin){
+    if($(Test-scupPSRole -Name "helpdesk" -User $authenticatedUser)){
 
     "The following users can use the administrative portal:"
     $doubleEscapedGroupName = $(Get-scupPSValue -Name "scupPSAdminGroup").Replace("\","\\")

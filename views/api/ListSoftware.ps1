@@ -1,7 +1,7 @@
 #Request Information
 $requestorMachine = $Data.Query.submitrequestmachine
 
-if($operation -eq "listsoftware" -and $UserIsAdmin){
+if($operation -eq "listsoftware" -and $(Test-scupPSRole -Name "helpdesk" -User $authenticatedUser)){
     
     $software = Get-CimInstance -ComputerName (Get-scupPSValue -Name "SCCM_SiteServer") -Namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -Query (
     "SELECT 
