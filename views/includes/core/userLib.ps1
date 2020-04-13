@@ -80,7 +80,6 @@ function Test-scupPSRole($Name,$User){
         ){
             return $false
         }   
-        Write-Host($user.UserGroupName -join ";")
         return ($role -in $user.UserGroupName)
     }else{
         (Get-scupPSRole).GetEnumerator() | ForEach-Object {
