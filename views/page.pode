@@ -9,16 +9,32 @@ $(
 )
 <!-- ############################################### Main ################################################# -->
 $(
+    $Data.LoadedUsingPageLoader = $true
     if( 
         (Get-ServerReadyness) -eq $true
     ){
+        $page = $Data.Query['page']
+        $navItem = (Get-PodeState -Name "navItems").GetEnumerator() | Where-Object { 
+            $page -and 
+            $_.Value.basename -eq $page 
+        }
         if(
-            ($page = $Data.Query['page']) -and
-            ($page -ne "")
+            !$page -or
+            !$navItem.Value.role -or
+            (
+                ($role = $navItem.Value.role) -and
+                (Test-scupPSRole -Name $role -User $authenticatedUser)
+            )
         ){
-            Use-PodePartialView -Path "pages/$page" -Data $Data
+            if(
+                $page
+            ){
+                Use-PodePartialView -Path "pages/$page" -Data $Data
+            }else{
+                Use-PodePartialView -Path "pages/myapprovals" -Data $Data
+            }
         }else{
-            Use-PodePartialView -Path "pages/myapprovals" -Data $Data
+            "Access to this page is denied! You're not member of role $role!"
         }
     }else{
         Use-PodePartialView -Path "pages/config_initial" -Data $Data

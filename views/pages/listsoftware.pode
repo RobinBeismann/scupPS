@@ -1,4 +1,4 @@
-<!-- Item Name: 'List Client Details' -->
+<!-- Item Name: 'List Software' Item Role: 'helpdesk' -->
 
 <!-- ############################################### Includes ############################################# -->
 $( 
@@ -25,9 +25,9 @@ $(
                 if (anHttpRequest.readyState == 4 && anHttpRequest.status == 200)
                     aCallback(anHttpRequest.responseText);
             }
-
+            
             requesttype = "GET";
-
+            
             anHttpRequest.open( requesttype, aUrl, true );            
             anHttpRequest.send( null );
         }
@@ -43,7 +43,7 @@ $(
         ){                
             var client = new HttpClient();
 
-            var suburl = (url + '?operation=listclientdetails' + 
+            var suburl = (url + '?operation=listsoftware' + 
                             '&submitrequestmachine=' + machine
                             );
                             
@@ -57,8 +57,12 @@ $(
         }else{
             `$('#maindatadiv').html('Please select a device to show data.');
         }
-    }    
+    }
+
+
+    
 </script>
+
 
 $(
     if($userIsAdmin){
@@ -93,7 +97,7 @@ $(
         #Build Fields
         @"
         <!-- Form Name -->
-        <legend>List Client Details</legend>
+        <legend>List Software</legend>
 
         <!-- Old Machine -->
         <label class="control-label" for="dropdown-menu">Machine</label>  
@@ -107,9 +111,9 @@ $(
         </select>
             
         <div class="row justify-content-center">
-            <div class="row">
+            <div class="col-auto">
                 <div id="maindatadiv">
-                    Client details will be shown when device is selected.
+                    Software will be shown when device is selected.
                 </div>
             </div>
         </div>
@@ -118,5 +122,4 @@ $(
         "You don't have access to this page"
     }
 )
-
 <!-- ############################################### End ################################################## -->

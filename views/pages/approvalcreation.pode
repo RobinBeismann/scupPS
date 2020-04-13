@@ -1,4 +1,4 @@
-<!-- Item Name: 'Approval Migration' -->
+<!-- Item Name: 'Approval Creation' Item Role: 'helpdesk' -->
 
 <!-- ############################################### Includes ############################################# -->
 $( 
@@ -15,7 +15,7 @@ $(
 <!-- ############################################### Code ################################################# -->
 
 
-<script type="text/javascript" >
+<script type="text/javascript">
 var url = '/api';
 
 var HttpClient = function() {
@@ -33,66 +33,68 @@ this.get = function(aUrl, aCallback, requesttype) {
 }
 
 function calculate(){
-    var oldmachine = document.getElementById('oldmachine').value;
-    var newmachine = document.getElementById('newmachine').value;
+    var machine = document.getElementById('machine').value;
+    var user = document.getElementById('user').value;
+    var application = document.getElementById('application').value;
     `$('#existing_approvals').html('Retrieving approvals, please wait.');
-
     if(
-        (oldmachine != "notset") && 
-        (oldmachine != "") &&
-        (newmachine != "") &&
-        (newmachine != "notset")
+        (machine != "notset") && 
+        (machine != "") &&
+        (user != "") &&
+        (user != "notset") &&
+        (application != "") &&
+        (application != "notset")
     ){                
         var client = new HttpClient();
-
-        var suburl = (url + '?operation=approvaltakeoverpreview' + 
-                        '&submitrequestmachine=' + oldmachine + 
-                        '&submitnewmachine=' + newmachine
+        var suburl = (url + '?operation=approvalcreationpreview' + 
+                        '&submitrequestmachine=' + machine + 
+                        '&submitrequestapplication=' + application + 
+                        '&submitrequestuser=' + user
                         );
                         
         client.get( suburl, function(response) {
-                if(response && response != ""){          
-                    response = "Approvals to migrate:<br/>" + response              
+                if(response && response != ""){                       
                     `$('#existing_approvals').html(response);
-                    document.getElementById("submitmigration").disabled=false;
-                }else{
-                    `$('#existing_approvals').html('No approvals found.');
                     document.getElementById("submitmigration").disabled=true;
+                }else{
+                    `$('#existing_approvals').html('Approval currently not existent, ready to create.');
+                    document.getElementById("submitmigration").disabled=false;
                 }           
-        }, "POST");
+        }, "GET");
     }else{
-        `$('#existing_approvals').html('Please select both devices to show existing approvals.');
+        `$('#existing_approvals').html('Please select all values.');
         document.getElementById("submitmigration").disabled=false;
     }
 }
 
 function submitData(){
-    var oldmachine = document.getElementById('oldmachine').value;
-    var newmachine = document.getElementById('newmachine').value;
-    `$('#existing_approvals').html('Migrating approvals, please wait..');
-
+    var machine = document.getElementById('machine').value;
+    var user = document.getElementById('user').value;
+    var application = document.getElementById('application').value;
+    `$('#existing_approvals').html('Retrieving approvals, please wait.');
     if(
-        (oldmachine != "notset") && 
-        (oldmachine != "") &&
-        (newmachine != "") &&
-        (newmachine != "notset")
+        (machine != "notset") && 
+        (machine != "") &&
+        (user != "") &&
+        (user != "notset") &&
+        (application != "") &&
+        (application != "notset")
     ){                
         var client = new HttpClient();
-
-        var suburl = (url + '?operation=approvaltakeover' + 
-                        '&submitrequestmachine=' + oldmachine + 
-                        '&submitnewmachine=' + newmachine
+        var suburl = (url + '?operation=approvalcreation' + 
+                        '&submitrequestmachine=' + machine + 
+                        '&submitrequestapplication=' + application + 
+                        '&submitrequestuser=' + user
                         );
                         
         client.get( suburl, function(response) {
                 if(response && response != ""){          
-                    response = "Approvals migrated:<br/>" + response
                     `$('#existing_approvals').html(response);
                     document.getElementById("submitmigration").disabled=true;
                 }          
         }, "POST");
     }else{
-        `$('#existing_approvals').html('Please select both devices.');
+        `$('#existing_approvals').html('Please select all values.');
     }
 }
 
@@ -128,15 +130,30 @@ $(
                     $WhereClause
              )
         " | Sort-Object -Property Name
-    
+
+        $PotentialApps = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "
+        SELECT 
+            SMS_Application.Manufacturer, SMS_Application.LocalizedDisplayName, SMS_Application.ModelName
+        FROM 
+            SMS_Application 
+        JOIN 
+            SMS_DeploymentSummary
+        ON 
+            SMS_Application.ModelName = SMS_DeploymentSummary.ModelName
+        WHERE
+            SMS_Application.IsLatest = 1 AND
+            SMS_Application.IsSuperseded = 0 AND
+            SMS_DeploymentSummary.RequireApproval = 1
+        "    
+
         #Build Fields
         @"
         <!-- Form Name -->
-        <legend>Migrate Approvals</legend>
+        <legend>Pre-create Approvals</legend>
     
-        <!-- Old Machine -->
-        <label class="control-label" for="dropdown-menu">Old Machine</label>  
-        <select class="form-control input-md" id="oldmachine" onchange="calculate()">
+        <!-- Machine -->
+        <label class="control-label" for="dropdown-menu">Machine</label>  
+        <select class="form-control input-md" id="machine" onchange="calculate()">
         <option value = 'notset'>Please select!</option>
         $(  
             $computers | ForEach-Object {     
@@ -144,14 +161,25 @@ $(
             }
         )
         </select>
-    
-        <!-- New Machine -->
-        <label class="control-label" for="dropdown-menu">New Machine</label>  
-        <select class="form-control input-md" id="newmachine" onchange="calculate()">
+
+        <!-- User -->
+        <label class="control-label" for="dropdown-menu">User</label>  
+        <select class="form-control input-md" id="user" onchange="calculate()">
         <option value = 'notset'>Please select!</option>
         $(  
-            $computers | ForEach-Object {     
-                "<option value='$($_.Name)'>$($_.Name)</option>"
+            (Get-scupPSUsers).GetEnumerator() | ForEach-Object {     
+                "<option value='$($_.Value.SID)'>$($_.Value.DisplayName)</option>"
+            }
+        )
+        </select>
+    
+        <!-- Application -->
+        <label class="control-label" for="dropdown-menu">Application</label>  
+        <select class="form-control input-md" id="application" onchange="calculate()">
+        <option value = 'notset'>Please select!</option>
+        $(  
+            $PotentialApps | ForEach-Object {     
+                "<option value='$($_.ModelName)'>$($_.Manufacturer + " " + $_.LocalizedDisplayName)</option>"
             }
         )
         </select>
@@ -167,7 +195,7 @@ $(
         <div class="row justify-content-center">
             <div class="col-auto">
                 <div id="existing_approvals">
-                    Existing approvals will be shown as soon as both devices are selected.
+                    Please select all values.
                 </div>
             </div>
         </div>

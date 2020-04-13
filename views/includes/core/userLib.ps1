@@ -52,3 +52,42 @@ function Test-ApproveCompetence($Manager,$User){
     }
     return $false
 }
+
+function Get-scupPSRole($Name){
+    $roles = Get-scupPSValue -Name "scupPSRoles"
+
+    if(!$Name){
+        return $roles
+    }elseif($roles.$Name){
+        return $roles.$Name
+    }
+        
+    return $false    
+}
+
+function Set-scupPSRole($Name,$Value){
+    $roles = Get-scupPSValue -Name "scupPSRoles"
+
+    if(
+        !($roles.$Name) -or
+        ($roles | Get-Member -Name $Name -ErrorAction SilentlyContinue) -ne $Value
+    ){
+        Write-Host("Set-scupPSRole: Updating Role Val '$Name' to '$Value'")
+        $roles.$Name = $Value
+        Set-scupPSValue -Name "scupPSRoles" -Value $roles
+    }
+}
+#Update the role with the group set under general settings
+Set-scupPSRole -Name "admin" -Value (Get-scupPSValue -Name "scupPSAdminGroup")
+
+function Test-scupPSRole($Name,$User){
+    if(
+        !$Name -or 
+        !$User -or 
+        !($role = Get-scupPSRole -Name $Name)
+    ){
+        return $false
+    }   
+    Write-Host($user.UserGroupName -join ";")
+    return ($role -in $user.UserGroupName)
+}
