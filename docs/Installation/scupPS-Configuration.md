@@ -3,15 +3,10 @@
 # scupPS Configuration Steps
 This document describes the main configuration steps for scupPS
 
-## Create config files
-Create a copy of the following files and remove the .template extension:
-```
-server.ps1.template
-```
-```
-views\includes\core\config.ps1.template
-```
+## Initial Setup
+After setting up the IIS Site and cloning scupPS into the webroot, start the IIS App Pool and browse to the scupPS URL.
+You will now be asked to configure the basic settings required to run scupPS.
+The Wizard will verify settings like the Site Server and Site Code and won't let you continue without having them being tested successfully.
+After you're logged into scupPS, set the helpdesk Group under "Admin" -> "Configuration Roles". You can set this group to the same group you're using as admin group.
 
-## Adjust the config.ps1
-Adjust the values in the config.ps1 to your needs, those are used by all functions of scupPS.
-All values in there are commented and should be self-describing. Incase of questions feel free to raise an Issue on the Github Repository.
+You can update all settings anytime either offline in the "states.json" file while scupPS/Pode is stopped or online in under the menu point "Admin" -> "Configuration - General".

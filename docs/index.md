@@ -16,12 +16,8 @@ The Web UI is served by a bootstrap derived template called [AdminLTE](https://g
 
 * Completely built on PowerShell Core Version 7.0
 * Support for native Single Sign On handled by the Internet Information Services (IIS) 
-* Listen on a single or multiple IP address/hostnames
-* Support for custom error pages
-* Request and Response compression using GZip/Deflate
-* Multi-thread support for incoming requests
-* Ability to allow/deny requests from certain IP addresses and subnets
-* No own datasource / database: Pulls all informations from MEMCM/SCCM and uses native capabilities
+* **No own datasource / database**: Pulls all informations from MEMCM/SCCM and uses native capabilities
+* **No Configuration Files**: All configuration can be done online, even the initial setup
 * **MEMCM / SCCM Support**
   * Supports all MEMCM/SCCM Versions starting from 1906
   * Tested on:
@@ -49,7 +45,11 @@ The Web UI is served by a bootstrap derived template called [AdminLTE](https://g
   * **List Software**: View installed Updates of a client
   * **List Task Sequence Status**: View the status of currently running or recently run task sequences
   * **List Updates**: View installed Software on a client
-
+* Listen on a single or multiple IP address/hostnames
+* Support for custom error pages
+* Request and Response compression using GZip/Deflate
+* Multi-thread support for incoming requests
+* Ability to allow/deny requests from certain IP addresses and subnets
 
 ## Quick Look!
 
