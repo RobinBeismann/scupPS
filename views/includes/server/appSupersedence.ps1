@@ -1,4 +1,4 @@
-# Cache Users
+# Add Job
 Write-Host("Adding Scheduled Job to migrate superseded Approvals..")
 Add-PodeSchedule -Name 'migrateSupersededApprovals' -Cron '@hourly' -OnStart -ScriptBlock {
     Start-Sleep -Seconds 30

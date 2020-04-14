@@ -149,8 +149,5 @@ function Get-ServerReadyness(){
     }
     Set-scupPSValue -Name "scupPSServerReady" -Value $ready
     Write-Host("Ready State: $ready")
-    Invoke-PodeSchedule -Name 'CacheUsers'
-    Invoke-PodeSchedule -Name 'CacheMachines'
-    Invoke-PodeSchedule -Name 'CacheApplications'
     return $ready
 }
