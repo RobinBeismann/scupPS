@@ -1,12 +1,10 @@
 #Get authenticated user
 if(
-    !($AuthenticatedUser = Get-CimInstance -Namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -Computer (Get-scupPSValue -Name "SCCM_SiteServer") -Query "select * from sms_r_user where DistinguishedName='$($Data.Auth.User.DistinguishedName)'") -or
+    !($AuthenticatedUser = Get-CimInstance -Namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -Computer (Get-scupPSValue -Name "SCCM_SiteServer") -Query "select * from sms_r_user where DistinguishedName='$($Data.Auth.User.DistinguishedName.Replace("\","\\"))'") -or
     !($doubleBackslashUsername = $authenticatedUser.UniqueUserName.Replace("\","\\"))
 ){
     $AuthenticatedUser = $null
 }###################################################### HANDLE PROPERLY!
-
-    #$AuthenticatedUser = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -Query "select * from sms_r_user where DistinguishedName='$($Data.Auth.User.DistinguishedName)'"
 
 #Check if the user is admin and if so set the variable, other pages may rely on this
 $userIsCostcenterManager = $null
