@@ -167,8 +167,8 @@ $(
         <select class="form-control input-md" id="user" onchange="calculate()">
         <option value = 'notset'>Please select!</option>
         $(  
-            (Get-scupPSUsers).GetEnumerator() | ForEach-Object {     
-                "<option value='$($_.Value.SID)'>$($_.Value.DisplayName)</option>"
+			Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "SELECT * FROM SMS_R_User where $(Get-scupPSValue -Name "Attribute_costCenter") IS NOT NULL" | ForEach-Object {     
+                "<option value='$($_.SID)'>$($_.DisplayName)</option>"
             }
         )
         </select>

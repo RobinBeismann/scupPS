@@ -1,7 +1,6 @@
 #Get authenticated user
 if(
-    !($AuthenticatedUserSID = (Get-PodeState -Name "cache_UsersDNtoSID").($Data.Auth.User.DistinguishedName)) -or
-    !($AuthenticatedUser = (Get-scupPSUsers).$AuthenticatedUserSID) -or
+    !($AuthenticatedUser = Get-CimInstance -Namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -Computer (Get-scupPSValue -Name "SCCM_SiteServer") -Query "select * from sms_r_user where DistinguishedName='$($Data.Auth.User.DistinguishedName)'") -or
     !($doubleBackslashUsername = $authenticatedUser.UniqueUserName.Replace("\","\\"))
 ){
     $AuthenticatedUser = $null

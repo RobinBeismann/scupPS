@@ -1,3 +1,4 @@
+<#
 # Cache Users
 Write-Host("Adding Scheduled Job to cache users..")
 Add-PodeSchedule -Name 'CacheUsers' -Cron '@hourly' -OnStart -ScriptBlock {  
@@ -179,6 +180,7 @@ Add-PodeSchedule -Name 'CacheMachines' -Cron '@hourly' -OnStart -ScriptBlock {
     Invoke-PodeSchedule -Name 'saveStates'
 }
 
+#>
 # Cache Navigation Bar
 Write-Host("Adding Scheduled Job to rebuild the Navigation Bar once per hour and initially at the start..")
 Add-PodeSchedule -Name 'CacheNavbar' -Cron '@hourly' -OnStart -ScriptBlock { 
@@ -226,7 +228,6 @@ Add-PodeSchedule -Name 'CacheNavbar' -Cron '@hourly' -OnStart -ScriptBlock {
     Set-PodeState -Name "navItems" -Value $obj | Out-Null
     Invoke-PodeSchedule -Name 'saveStates'
 }
-
 # Regulary save states
 Write-Host("Adding Scheduled Job to save states every minute..")
 Add-PodeSchedule -Name 'saveStates' -Cron '@minutely' -ScriptBlock { 

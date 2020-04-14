@@ -154,15 +154,3 @@ function Get-ServerReadyness(){
     Invoke-PodeSchedule -Name 'CacheApplications'
     return $ready
 }
-
-function Get-scupPSUsers(){
-    return Get-PodeState -Name "cache_Users"
-}
-
-function Get-scupPSMachines(){
-    return Get-PodeState -Name "cache_Machines"
-}
-
-function Get-scupPSApplications(){
-    return Get-PodeState -Name "cache_Applications"
-}
