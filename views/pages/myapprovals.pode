@@ -131,14 +131,27 @@ $(
         $Attributes = (Get-scupPSValue -Name "Attribute_managedcostCenters"), (Get-scupPSValue -Name "Attribute_costCenter"), "SID", "distinguishedName", "sn", "givenName", "FullUserName", "mail"
         $AttributesJoined = $Attributes -join ","
 
+        $userTable = @{}
+        $appTable = @{}
+
         $openRequests | ForEach-Object {        
             #Check if our current user is responsible for this users' costcenter
             if(
-                ($user = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "SELECT $AttributesJoined FROM SMS_R_User WHERE SID='$($_.UserSid)'" ) -and
-                ($application = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "select * from SMS_Application where ModelName='$($_.Modelname)' AND IsLatest = 1" ) -and
+                !($user = $userTable.$($_.UserSid))
+            ){
+                $userTable.$($_.UserSid) = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "SELECT $AttributesJoined FROM SMS_R_User WHERE SID='$($_.UserSid)'"
+                $user = $userTable.$($_.UserSid)
+            }
+            if(
                 (Test-ApproveCompetence -User $user -Manager $authenticatedUser)
             ){                
                 #Yes he is -> Add this request to his table
+                if(
+                    !($application = $appTable.$($_.Modelname))
+                ){
+                    $appTable.$($_.Modelname) = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "select * from SMS_Application where ModelName='$($_.Modelname)' AND IsLatest = 1"
+                    $application = $appTable.$($_.Modelname)
+                }
                 $_ | Add-Member -MemberType NoteProperty -Name "userObject" -Value $user -Force  
                 $_ | Add-Member -MemberType NoteProperty -Name "appObject" -Value $application -Force 
                 $managedRequests += $_ 
