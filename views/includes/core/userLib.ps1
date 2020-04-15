@@ -23,7 +23,7 @@ if(
 }
 
 function Test-ApproveCompetence($Manager,$User){
-    $isAdmin = Test-scupPSRole -Name "helpdesk" -User $User
+    $isAdmin = Test-scupPSRole -Name "helpdesk" -User $Manager
     $managerCostcenters = $Manager.$(Get-scupPSValue -Name "Attribute_managedcostCenters")
     $userCostcenter = $User.$(Get-scupPSValue -Name "Attribute_costCenter")
 

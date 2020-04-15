@@ -105,55 +105,56 @@ $(
 
         $ShowApprovals = $Data.Query['ShowApprovals']        
         if($ShowApprovals -ne "history"){
-            $queryAddition = "and CurrentState='1' and CurrentState!='2'"
+            $queryAddition = "and SMS_UserApplicationRequest.CurrentState='1' and SMS_UserApplicationRequest.CurrentState!='2'"
         }else{        
-            $queryAddition = "and CurrentState!='1' and CurrentState!='2'"
+            $queryAddition = "and SMS_UserApplicationRequest.CurrentState!='1' and SMS_UserApplicationRequest.CurrentState!='2'"
         }
 
         #Get approval requests
         $openRequests = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "
         SELECT 
-            SMS_UserApplicationRequest.* 
+            SMS_UserApplicationRequest.RequestedMachine,
+            SMS_UserApplicationRequest.RequestGuid,
+            SMS_UserApplicationRequest.Application,
+            SMS_UserApplicationRequest.Comments,
+            SMS_UserApplicationRequest.CurrentState,
+            SMS_UserApplicationRequest.ModelName,
+            SMS_UserApplicationRequest.User,
+            SMS_R_User.givenName,
+            SMS_R_User.sn,
+            SMS_R_User.mail,
+            SMS_R_User.SID,
+            SMS_R_User.FullUserName,
+            SMS_R_User.UserGroupName,
+            SMS_R_User.DistinguishedName,
+            SMS_R_User.$(Get-scupPSValue -Name "Attribute_managedcostCenters"),
+            SMS_R_User.$(Get-scupPSValue -Name "Attribute_costCenter"),
+            SMS_Application.LocalizedDisplayName,
+            SMS_Application.ModelName,
+            SMS_Application.CI_ID
         FROM 
             SMS_UserApplicationRequest
         JOIN 
             SMS_Application 
         ON 
             SMS_Application.ModelName = SMS_UserApplicationRequest.ModelName
+        JOIN 
+            SMS_R_User 
+        ON 
+            SMS_R_User.UniqueUserName = SMS_UserApplicationRequest.User
         WHERE
             SMS_Application.IsLatest = 1 AND
             SMS_Application.IsSuperseded = 0
             $queryAddition
-        " | Get-CimInstance
+        "
         $managedRequests = @()
         #Process
 
-        $Attributes = (Get-scupPSValue -Name "Attribute_managedcostCenters"), (Get-scupPSValue -Name "Attribute_costCenter"), "SID", "distinguishedName", "sn", "givenName", "FullUserName", "mail"
-        $AttributesJoined = $Attributes -join ","
-
-        $userTable = @{}
-        $appTable = @{}
-
-        $openRequests | ForEach-Object {        
+        $openRequests | ForEach-Object {
             #Check if our current user is responsible for this users' costcenter
             if(
-                !($user = $userTable.$($_.UserSid))
-            ){
-                $userTable.$($_.UserSid) = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "SELECT $AttributesJoined FROM SMS_R_User WHERE SID='$($_.UserSid)'"
-                $user = $userTable.$($_.UserSid)
-            }
-            if(
-                (Test-ApproveCompetence -User $user -Manager $authenticatedUser)
-            ){                
-                #Yes he is -> Add this request to his table
-                if(
-                    !($application = $appTable.$($_.Modelname))
-                ){
-                    $appTable.$($_.Modelname) = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "select * from SMS_Application where ModelName='$($_.Modelname)' AND IsLatest = 1"
-                    $application = $appTable.$($_.Modelname)
-                }
-                $_ | Add-Member -MemberType NoteProperty -Name "userObject" -Value $user -Force  
-                $_ | Add-Member -MemberType NoteProperty -Name "appObject" -Value $application -Force 
+                (Test-ApproveCompetence -User $user.SMS_R_User -Manager $authenticatedUser)
+            ){              
                 $managedRequests += $_ 
             }
         }
@@ -176,18 +177,18 @@ $(
         if(!$ShowApprovals -or $ShowApprovals -ne "history"){
 
             $managedRequests | ForEach-Object {
-                $cmRessource = $_.userObject
+                $app = (Get-PodeState -Name "cache_Applications").$($_.SMS_UserApplicationRequest.ModelName)
                 "<tr>
-                    <td scope='col'>$($cmRessource.FullUserName)</td>
-                    <td scope='col'>$($cmRessource.$(Get-scupPSValue -Name "Attribute_costCenter"))</td>
-                    <td scope='col'><a href='mailto:$($cmRessource.Mail)'>$($cmRessource.Mail)</a></td>
-                    <td scope='col'>$($_.Application)</td>
-                    <td scope='col'>$($_.RequestedMachine)</td>
-                    <td scope='col'>$(Replace-HTMLVariables($_.AppObject.LocalizedDescription))</td>
-                    <td scope='col'>$($_.Comments)</td>
+                    <td scope='col'>$($_.SMS_R_User.FullUserName)</td>
+                    <td scope='col'>$($_.SMS_R_User.$(Get-scupPSValue -Name "Attribute_costCenter"))</td>
+                    <td scope='col'><a href='mailto:$($_.SMS_R_User.Mail)'>$($_.SMS_R_User.Mail)</a></td>
+                    <td scope='col'>$($app.Title)</td>
+                    <td scope='col'>$($_.SMS_UserApplicationRequest.RequestedMachine)</td>
+                    <td scope='col'>$(Replace-HTMLVariables($app.Description))</td>
+                    <td scope='col'>$($_.SMS_UserApplicationRequest.Comments)</td>
                     <td scope='col'>
-                        <button id='btn_approve_$($_.RequestGuid)' name='btn_approve' class='btn btn-primary' onclick='handleRequest(`"approverequest`",`"$($_.RequestGuid)`"`)'>Approve</button>
-                        <button id='btn_deny_$($_.RequestGuid)' name='btn_deny' class='btn btn-primary' onclick='handleRequest(`"denyrequest`",`"$($_.RequestGuid)`")'>Deny</button>
+                        <button id='btn_approve_$($_.RequestGuid)' name='btn_approve' class='btn btn-primary' onclick='handleRequest(`"approverequest`",`"$($_.SMS_UserApplicationRequest.RequestGuid)`"`)'>Approve</button>
+                        <button id='btn_deny_$($_.RequestGuid)' name='btn_deny' class='btn btn-primary' onclick='handleRequest(`"denyrequest`",`"$($_.SMS_UserApplicationRequest.RequestGuid)`")'>Deny</button>
                     </td>
                 </tr>
                 "
@@ -196,37 +197,37 @@ $(
         }else{
             #Build history request table
             $managedRequests | ForEach-Object {
-                $cmRessource = $_.userObject
+                $app = (Get-PodeState -Name "cache_Applications").$($_.SMS_UserApplicationRequest.ModelName)
                 "<tr>
-                    <td scope='col'>$($cmRessource.FullUserName)</td>
-                    <td scope='col'>$($cmRessource.$(Get-scupPSValue -Name "Attribute_costCenter"))</td>
-                    <td scope='col'><a href='mailto:$($cmRessource.Mail)'>$($cmRessource.Mail)</a></td>
-                    <td scope='col'>$($_.Application)</td>
-                    <td scope='col'>$($_.RequestedMachine)</td>
-                    <td scope='col'>$(Replace-HTMLVariables($_.AppObject.LocalizedDescription))</td>
-                    <td scope='col'>$($_.Comments)</td>
+                    <td scope='col'>$($_.SMS_R_User.FullUserName)</td>
+                    <td scope='col'>$($_.SMS_R_User.$(Get-scupPSValue -Name "Attribute_costCenter"))</td>
+                    <td scope='col'><a href='mailto:$($_.SMS_R_User.Mail)'>$($_.SMS_R_User.Mail)</a></td>
+                    <td scope='col'>$($app.Title)</td>
+                    <td scope='col'>$($_.SMS_UserApplicationRequest.RequestedMachine)</td>
+                    <td scope='col'>$(Replace-HTMLVariables($app.Description))</td>
+                    <td scope='col'>$($_.SMS_UserApplicationRequest.Comments)</td>
                     <td scope='col'>
-                    <button id='btn_approve_$($_.RequestGuid)' name='btn_approve' class='btn btn-primary' onclick='handleRequest(`"approverequest`",`"$($_.RequestGuid)`"`)'>Approve</button>
+                    <button id='btn_approve_$($_.RequestGuid)' name='btn_approve' class='btn btn-primary' onclick='handleRequest(`"approverequest`",`"$($_.SMS_UserApplicationRequest.RequestGuid)`"`)'>Approve</button>
                         
                         $(
                             #Check if this request is already approved
-                            if($_.CurrentState -eq 4){
+                            if($_.SMS_UserApplicationRequest.CurrentState -eq 4){
                                 #Switch to revoke
                                 $btnAction = "revokerequest"
                                 $btnDescription = "Revoke"
                                 #Disable approve button
-                                "<script type='text/javascript'>document.getElementById('btn_approve_$($_.RequestGuid)').disabled = true;</script>"
+                                "<script type='text/javascript'>document.getElementById('btn_approve_$($_.SMS_UserApplicationRequest.RequestGuid)').disabled = true;</script>"
                             }else{
                                 $btnAction = "denyrequest"
                                 $btnDescription = "Deny"
                             }
                         )
-                        <button id='btn_deny_$($_.RequestGuid)' name='btn_deny' class='btn btn-primary' onclick='handleRequest(`"$($btnAction)`",`"$($_.RequestGuid)`")'>$btnDescription</button>
+                        <button id='btn_deny_$($_.RequestGuid)' name='btn_deny' class='btn btn-primary' onclick='handleRequest(`"$($btnAction)`",`"$($_.SMS_UserApplicationRequest.RequestGuid)`")'>$btnDescription</button>
                         
                         $(
                             #Set Deny button to disabled if request is not approved
-                            if($_.CurrentState -ne 4){
-                                "<script type='text/javascript'>document.getElementById('btn_deny_$($_.RequestGuid)').disabled = true;</script>"
+                            if($_.SMS_UserApplicationRequest.CurrentState -ne 4){
+                                "<script type='text/javascript'>document.getElementById('btn_deny_$($_.SMS_UserApplicationRequest.RequestGuid)').disabled = true;</script>"
                             }
                         )                
                     </td>
@@ -239,7 +240,42 @@ $(
         }
     }else{
         #Get approval requests
-        $managedRequests = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "Select * From SMS_UserApplicationRequest WHERE User = '$doubleBackslashUsername'"
+        $openRequests = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "
+        SELECT 
+            SMS_UserApplicationRequest.RequestedMachine,
+            SMS_UserApplicationRequest.RequestGuid,
+            SMS_UserApplicationRequest.Application,
+            SMS_UserApplicationRequest.Comments,
+            SMS_UserApplicationRequest.CurrentState,
+            SMS_UserApplicationRequest.ModelName,
+            SMS_UserApplicationRequest.User,
+            SMS_R_User.givenName,
+            SMS_R_User.sn,
+            SMS_R_User.mail,
+            SMS_R_User.SID,
+            SMS_R_User.FullUserName,
+            SMS_R_User.UserGroupName,
+            SMS_R_User.DistinguishedName,
+            SMS_R_User.$(Get-scupPSValue -Name "Attribute_managedcostCenters"),
+            SMS_R_User.$(Get-scupPSValue -Name "Attribute_costCenter"),
+            SMS_Application.LocalizedDisplayName,
+            SMS_Application.ModelName,
+            SMS_Application.CI_ID
+        FROM 
+            SMS_UserApplicationRequest
+        JOIN 
+            SMS_Application 
+        ON 
+            SMS_Application.ModelName = SMS_UserApplicationRequest.ModelName
+        JOIN 
+            SMS_R_User 
+        ON 
+            SMS_R_User.UniqueUserName = SMS_UserApplicationRequest.User
+        WHERE
+            SMS_Application.IsLatest = 1 AND
+            SMS_Application.IsSuperseded = 0 AND
+            SMS_UserApplicationRequest.User = '$doubleBackslashUsername'
+        "        
         
         #Build request table
         '
@@ -253,11 +289,12 @@ $(
         '
 
         $managedRequests | ForEach-Object -Parallel {
+            $app = (Get-PodeState -Name "cache_Applications").$($_.SMS_UserApplicationRequest.ModelName)
             "<tr>
-                <td scope='col'>$($_.Application)</td>
-                <td scope='col'>$($_.RequestedMachine)</td>
-                <td scope='col'>$(Replace-HTMLVariables($_.AppObject.LocalizedDescription ))</td>
-                <td scope='col'>$($_.Comments)</td>
+                <td scope='col'>$($app.Title)</td>
+                <td scope='col'>$($_.SMS_UserApplicationRequest.RequestedMachine)</td>
+                <td scope='col'>$(Replace-HTMLVariables($app.Description))</td>
+                <td scope='col'>$($_.SMS_UserApplicationRequest.Comments)</td>
             </tr>
             "
         }
