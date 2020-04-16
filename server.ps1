@@ -27,7 +27,7 @@ Start-PodeServer -Threads (Get-CimInstance -ClassName "Win32_Processor" | Select
     
     #Authentication 
     Enable-PodeSessionMiddleware -Secret (Get-PodeState -Name "sessionSecret") -Duration 120 -Extend
-    Add-PodeAuthIIS -Name 'IISAuth'
+    Add-PodeAuthIIS -Name 'IISAuth' -NoGroups -NoLocalCheck
     $IISAuth = Get-PodeAuthMiddleware -Name 'IISAuth'
 
     #Routes

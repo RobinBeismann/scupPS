@@ -4,7 +4,7 @@ if(
     !($doubleBackslashUsername = $authenticatedUser.UniqueUserName.Replace("\","\\"))
 ){
     $AuthenticatedUser = $null
-}###################################################### HANDLE PROPERLY!
+}
 
 #Check if the user is admin and if so set the variable, other pages may rely on this
 $userIsCostcenterManager = $null
