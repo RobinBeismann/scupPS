@@ -9,7 +9,7 @@ if(
     (
         ((Get-ServerReadyness) -eq $false) -or
         (
-            ($user = Get-CimInstance -Computer (Get-scupPSValue -Name "SCCM_SiteServer") -Namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -Query "select * from sms_r_user where DistinguishedName='$($Data.Auth.User.DistinguishedName)'") -and
+            ($user = Get-CimInstance -Computer (Get-scupPSValue -Name "SCCM_SiteServer") -Namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -Query "select * from sms_r_user where DistinguishedName='$($Data.Auth.User.DistinguishedName.Replace("\","\\"))'") -and
             ((Get-scupPSValue -Name "scupPSAdminGroup") -in $user.UserGroupName)
         )
     )
@@ -42,7 +42,7 @@ if(
         }
         "scupPSAdminGroup" {
             if(
-                ($user = Get-CimInstance -Computer (Get-scupPSValue -Name "SCCM_SiteServer") -Namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -Query "select * from sms_r_user where DistinguishedName='$($Data.Auth.User.DistinguishedName)'") -and
+                ($user = Get-CimInstance -Computer (Get-scupPSValue -Name "SCCM_SiteServer") -Namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -Query "select * from sms_r_user where DistinguishedName='$($Data.Auth.User.DistinguishedName.Replace("\","\\"))'") -and
                 ($requestInfo.FieldValue -in $user.UserGroupName)
             ){
                 $res = $true

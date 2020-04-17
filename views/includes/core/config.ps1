@@ -149,20 +149,5 @@ function Get-ServerReadyness(){
     }
     Set-scupPSValue -Name "scupPSServerReady" -Value $ready
     Write-Host("Ready State: $ready")
-    Invoke-PodeSchedule -Name 'CacheUsers'
-    Invoke-PodeSchedule -Name 'CacheMachines'
-    Invoke-PodeSchedule -Name 'CacheApplications'
     return $ready
-}
-
-function Get-scupPSUsers(){
-    return Get-PodeState -Name "cache_Users"
-}
-
-function Get-scupPSMachines(){
-    return Get-PodeState -Name "cache_Machines"
-}
-
-function Get-scupPSApplications(){
-    return Get-PodeState -Name "cache_Applications"
 }

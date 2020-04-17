@@ -1,4 +1,4 @@
-# Cache Users
+# Create default values for all not yet set ones
 Write-Host("Creating default values..")
 . ".\views\includes\core\config.ps1"
 

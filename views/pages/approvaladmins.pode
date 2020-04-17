@@ -18,8 +18,8 @@ $(
     if($(Test-scupPSRole -Name "helpdesk" -User $authenticatedUser)){
 
     "The following users can use the administrative portal:"
-    $doubleEscapedGroupName = $(Get-scupPSValue -Name "scupPSAdminGroup").Replace("\","\\")
-    Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "SELECT * FROM SMS_R_User where UserGroupName = '$doubleEscapedGroupName'" | ForEach-Object {
+    $doubleEscapedGroupName = (Get-scupPSRole -Name "helpdesk").Replace("\","\\")
+    Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "SELECT * FROM SMS_R_User where UserGroupName = '$doubleEscapedGroupName'" | Sort-Object -Property "FullUserName" | ForEach-Object {
         "<br/>$($_.FullUserName)"
     }
 
