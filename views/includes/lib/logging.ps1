@@ -8,11 +8,12 @@ function Write-scupPSLog($Message){
         $MessageType = "error"
     }
     
-    @{
+    $lEntry = @{
         MessageType = $MessageType
         Message = $Message
         Date = Get-Date -Format "yyyy-MM-dd hh:mm:ss"
-    } | Write-PodeLog -Name "feed"
+    }
+    $lEntry | Write-PodeLog -Name "feed"
 
-    Write-Host("scupPS Log: $Message")
+    Write-Host($lEntry.Date + ": scupPS Log: $Message")
 }
