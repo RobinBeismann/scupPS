@@ -65,8 +65,6 @@ function Set-scupPSRole($Name,$Value){
         Set-scupPSValue -Name "scupPSRoles" -Value $roles
     }
 }
-#Update the role with the group set under general settings
-Set-scupPSRole -Name "admin" -Value (Get-scupPSValue -Name "scupPSAdminGroup")
 
 function Test-scupPSRole($Name,$User){
     if($Name){

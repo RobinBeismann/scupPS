@@ -88,6 +88,7 @@ Add-PodeSchedule -Name 'CacheNavbar' -Cron '@hourly' -OnStart -ScriptBlock {
     Set-PodeState -Name "navItems" -Value $obj | Out-Null
     Invoke-PodeSchedule -Name 'saveStates'
 }
+
 # Regulary save states
 Write-Host("Adding Scheduled Job to save states every minute..")
 Add-PodeSchedule -Name 'saveStates' -Cron '@minutely' -ScriptBlock { 
@@ -95,4 +96,11 @@ Add-PodeSchedule -Name 'saveStates' -Cron '@minutely' -ScriptBlock {
     #Lock-PodeObject -Object $e.Lockable -ScriptBlock {
         Save-PodeState -Path ".\states.json"
     #}
+}
+
+# Regulary transfer values
+Write-Host("Adding Scheduled Job to save states every minute..")
+Add-PodeSchedule -Name 'saveValues' -Cron '@hourly' -OnStart -ScriptBlock { 
+    #Update the role with the group set under general settings
+    Set-scupPSRole -Name "admin" -Value (Get-scupPSValue -Name "scupPSAdminGroup")
 }
