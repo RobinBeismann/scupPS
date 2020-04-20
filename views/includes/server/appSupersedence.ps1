@@ -24,8 +24,7 @@ Add-PodeSchedule -Name 'migrateSupersededApprovals' -Cron '@hourly' -OnStart -Sc
         SELECT 
             * 
         FROM 
-            SMS_Application
-        
+            SMS_Application        
         WHERE
             SMS_Application.IsLatest = 1 AND
             SMS_Application.IsSuperseded = 0
@@ -58,6 +57,7 @@ Add-PodeSchedule -Name 'migrateSupersededApprovals' -Cron '@hourly' -OnStart -Sc
             #Save old Approval for usage in pipes
             $oldApproval = $_.SMS_UserApplicationRequest | Get-CimInstance
             $computerName = $oldApproval.RequestedMachine
+            Write-scupPSLog($computerName)
             $computer = Get-CimInstance -namespace $(Get-scupPSValue -Name "SCCM_SiteNamespace") -computer $(Get-scupPSValue -Name "SCCM_SiteServer") -query "Select * From SMS_R_SYSTEM where Name='$computerName'"
             $computerGUID = $computer.SMSUniqueIdentifier
             $doubleBackslashUsername = $oldApproval.User.Replace("\","\\")
@@ -182,7 +182,7 @@ Add-PodeSchedule -Name 'migrateSupersededApprovals' -Cron '@hourly' -OnStart -Sc
                 }
             }
         }catch{
-            Write-scupPSLog("Error during superseedence Migration: $_")
+            Write-scupPSLog("Error during superseedence Migration: $_ at Line $($_.InvocationInfo.ScriptLineNumber)")
         }
     }
 

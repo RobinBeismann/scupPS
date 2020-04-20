@@ -187,8 +187,8 @@ $(
                     <td scope='col'>$(Replace-HTMLVariables($app.Description))</td>
                     <td scope='col'>$($_.SMS_UserApplicationRequest.Comments)</td>
                     <td scope='col'>
-                        <button id='btn_approve_$($_.RequestGuid)' name='btn_approve' class='btn btn-primary' onclick='handleRequest(`"approverequest`",`"$($_.SMS_UserApplicationRequest.RequestGuid)`"`)'>Approve</button>
-                        <button id='btn_deny_$($_.RequestGuid)' name='btn_deny' class='btn btn-primary' onclick='handleRequest(`"denyrequest`",`"$($_.SMS_UserApplicationRequest.RequestGuid)`")'>Deny</button>
+                        <button id='btn_approve_$($_.SMS_UserApplicationRequest.RequestGuid)' name='btn_approve' class='btn btn-primary' onclick='handleRequest(`"approverequest`",`"$($_.SMS_UserApplicationRequest.RequestGuid)`"`)'>Approve</button>
+                        <button id='btn_deny_$($_.SMS_UserApplicationRequest.RequestGuid)' name='btn_deny' class='btn btn-primary' onclick='handleRequest(`"denyrequest`",`"$($_.SMS_UserApplicationRequest.RequestGuid)`")'>Deny</button>
                     </td>
                 </tr>
                 "
@@ -207,7 +207,7 @@ $(
                     <td scope='col'>$(Replace-HTMLVariables($app.Description))</td>
                     <td scope='col'>$($_.SMS_UserApplicationRequest.Comments)</td>
                     <td scope='col'>
-                    <button id='btn_approve_$($_.RequestGuid)' name='btn_approve' class='btn btn-primary' onclick='handleRequest(`"approverequest`",`"$($_.SMS_UserApplicationRequest.RequestGuid)`"`)'>Approve</button>
+                    <button id='btn_approve_$($_.SMS_UserApplicationRequest.RequestGuid)' name='btn_approve' class='btn btn-primary' onclick='handleRequest(`"approverequest`",`"$($_.SMS_UserApplicationRequest.RequestGuid)`"`)'>Approve</button>
                         
                         $(
                             #Check if this request is already approved
@@ -222,7 +222,7 @@ $(
                                 $btnDescription = "Deny"
                             }
                         )
-                        <button id='btn_deny_$($_.RequestGuid)' name='btn_deny' class='btn btn-primary' onclick='handleRequest(`"$($btnAction)`",`"$($_.SMS_UserApplicationRequest.RequestGuid)`")'>$btnDescription</button>
+                        <button id='btn_deny_$($_.SMS_UserApplicationRequest.RequestGuid)' name='btn_deny' class='btn btn-primary' onclick='handleRequest(`"$($btnAction)`",`"$($_.SMS_UserApplicationRequest.RequestGuid)`")'>$btnDescription</button>
                         
                         $(
                             #Set Deny button to disabled if request is not approved
