@@ -167,8 +167,15 @@ $(
         <select class="form-control input-md" id="user" onchange="calculate()">
         <option value = 'notset'>Please select!</option>
         $(  
-			Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "SELECT * FROM SMS_R_User where $(Get-scupPSValue -Name "Attribute_costCenter") IS NOT NULL" | ForEach-Object {     
-                "<option value='$($_.SID)'>$($_.DisplayName)</option>"
+			Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "
+                SELECT 
+                    SID, FullUserName 
+                FROM
+                    SMS_R_User
+                WHERE 
+                    $(Get-scupPSValue -Name "Attribute_costCenter") IS NOT NULL
+            " | Sort-Object -Property "FullUserName" | ForEach-Object {     
+                "<option value='$($_.SID)'>$($_.FullUserName)</option>"
             }
         )
         </select>
