@@ -141,19 +141,21 @@ if(
     <div class="tab"></td>
     
     $(
-        $groups = Get-CimInstance -Computer (Get-scupPSValue -Name "SCCM_SiteServer") -Namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -Query "SELECT Name FROM SMS_R_UserGroup"
+        $groups = Get-CimInstance -Computer (Get-scupPSValue -Name "SCCM_SiteServer") -Namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -Query "SELECT Name FROM SMS_R_UserGroup" | Select-Object -ExpandProperty Name | Sort-Object
 
         (Get-scupPSRole).GetEnumerator() | ForEach-Object {
             $val = [System.Net.WebUtility]::HtmlEncode($_.Value)
+            $curVal = $_.Value
+
             "
                 <p>$($_.Name): 
                 <select class=`"form-control input-md`" id=`"$($_.Name)`" onchange=`"verify('$($_.Name)')`">
-                $(  
-                    $groups.GetEnumerator() | Where-Object { $_.Name -ne $_.Value } | ForEach-Object {     
-                        "<option value='$($_.Name)'>$($_.Name)</option>"
+                $(
+                    $groups | Where-Object { $_ -ne $curVal } | ForEach-Object {     
+                        "<option value='$($_)'>$($_)</option>"
                     }
                 )
-                <option selected=`"selected`" value='$($_.Value)'>$($_.Value)</option>
+                <option selected=`"selected`" value='$curVal'>$curVal</option>
                 </select>
             "
         }

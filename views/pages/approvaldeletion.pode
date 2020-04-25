@@ -109,7 +109,7 @@ $(
 		}
         $computers = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "
         SELECT 
-            *
+            SMS_R_System.*
         FROM
             SMS_UserApplicationRequest
         JOIN
@@ -132,7 +132,7 @@ $(
                     $WhereClause
              )
         "
-        $computers = $computers.SMS_R_System | Select-Object -ExpandProperty Name -Unique | Sort-Object
+        $computers = $computers | Select-Object -ExpandProperty Name -Unique | Sort-Object
 		
         #Build Fields
         @"
