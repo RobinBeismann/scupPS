@@ -39,4 +39,4 @@ The website itself has no own database and gets all informations from the MEMCM/
 Authentication to the website is handled by the IIS hosting the Pode Instance, this can be anything that IIS supports, mostly Kerberos or Claim based SAML Authentication.
 
 ## Sounds cool, show me more!
-Checkout [the documentation](https://www.scupPS.de), it holds the installation guideline and a presentation of its functions!
+Checkout [the documentation](https://scupPS.de), it holds the installation guideline and a presentation of its functions!
