@@ -1,7 +1,3 @@
-#Request Information
-if(!$requestorMachine){
-    $requestorMachine = $Data.Query.submitrequestmachine
-}
 
 function Generate-Table($arr){
     
@@ -38,7 +34,11 @@ function Generate-Table($arr){
 }
 
 if($operation -eq "listclientdetails" -and $(Test-scupPSRole -Name "helpdesk" -User $authenticatedUser)){
-    
+    #Request Information
+    if(!$requestorMachine){
+        $requestorMachine = $Data.Query.submitrequestmachine
+    }
+
     $PCInfo = Get-CimInstance -ComputerName (Get-scupPSValue -Name "SCCM_SiteServer") -Namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -Query (
     "SELECT 
         *

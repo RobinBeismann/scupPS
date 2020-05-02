@@ -1,8 +1,6 @@
-#Request Information
-$requestorMachine = $Data.Query.submitrequestmachine
-
 if($operation -eq "listsoftware" -and $(Test-scupPSRole -Name "helpdesk" -User $authenticatedUser)){
-    
+    $requestorMachine = $Data.Query.submitrequestmachine
+
     $software = Get-CimInstance -ComputerName (Get-scupPSValue -Name "SCCM_SiteServer") -Namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -Query (
     "SELECT 
         InstalledLocation,ProductVersion,ProductName

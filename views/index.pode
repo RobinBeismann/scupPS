@@ -1,9 +1,8 @@
 <!-- ############################################### Includes ############################################# -->
 $( 
     #Include Config
-    . ".\views\includes\core\config.ps1"
-    . ".\views\includes\core\userLib.ps1"
-    
+    . "$(Get-PodeState -Name "PSScriptRoot")\views\includes\core\config.ps1"
+    . "$(Get-PodeState -Name "PSScriptRoot")\views\includes\core\userLib.ps1"
 )
 <!-- ############################################### Header ############################################### -->
 $( 

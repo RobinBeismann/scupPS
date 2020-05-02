@@ -1,5 +1,6 @@
 #Get authenticated user
 if(
+    !($Data.Auth.User.DistinguishedName) -or
     !($AuthenticatedUser = Get-CimInstance -Namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -Computer (Get-scupPSValue -Name "SCCM_SiteServer") -Query "select * from sms_r_user where DistinguishedName='$($Data.Auth.User.DistinguishedName.Replace("\","\\"))'") -or
     !($doubleBackslashUsername = $authenticatedUser.UniqueUserName.Replace("\","\\"))
 ){
@@ -42,7 +43,7 @@ function Test-ApproveCompetence($Manager,$User){
 }
 
 function Get-scupPSRole($Name){
-    $roles = Get-scupPSValue -Name "scupPSRoles"
+    $roles = Get-scupPSValue -Name "scupPSRoles" | ConvertFrom-Json
 
     if(!$Name){
         return $roles
@@ -54,7 +55,7 @@ function Get-scupPSRole($Name){
 }
 
 function Set-scupPSRole($Name,$Value){
-    $roles = Get-scupPSValue -Name "scupPSRoles"
+    $roles = Get-scupPSValue -Name "scupPSRoles" | ConvertFrom-Json
 
     if(
         !($roles.$Name) -or
@@ -62,7 +63,7 @@ function Set-scupPSRole($Name,$Value){
     ){
         Write-Host("Set-scupPSRole: Updating Role Val '$Name' to '$Value'")
         $roles.$Name = $Value
-        Set-scupPSValue -Name "scupPSRoles" -Value $roles
+        Set-scupPSValue -Name "scupPSRoles" -Value ($roles | ConvertTo-Json)
     }
 }
 
@@ -77,9 +78,11 @@ function Test-scupPSRole($Name,$User){
         }   
         return ($role -in $user.UserGroupName)
     }else{
-        (Get-scupPSRole).GetEnumerator() | ForEach-Object {
-            if(Test-scupPSRole -User $User -Name $_.Name){
-                $_.Name
+        if(Get-ServerReadyness){
+            (Get-scupPSRole).PSObject.Properties | ForEach-Object {
+                if(Test-scupPSRole -User $User -Name $_.Name){
+                    $_.Name
+                }
             }
         }
     }    

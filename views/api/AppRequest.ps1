@@ -1,16 +1,17 @@
-#Request Information
-$requestID = $Data.Query.submitrequestid
-$denyreason = $Data.Query.submitdenyreason
-
-$currentDate = [string](Get-Date -Format "yyyy\/MM\/dd hh:MM")
-
-$localSender = $(Get-scupPSValue -Name "smtpSender").Replace("%SenderDisplayName%","$approverDisplayNameV1 (Approval Portal)")
 
 if(
     ($operation -eq "approverequest") -or
     ($operation -eq "denyrequest") -or
     ($operation -eq "revokerequest")
 ){
+    #Request Information
+    $requestID = $Data.Query.submitrequestid
+    $denyreason = $Data.Query.submitdenyreason
+
+    $currentDate = [string](Get-Date -Format "yyyy\/MM\/dd hh:MM")
+
+    $localSender = $(Get-scupPSValue -Name "smtpSender").Replace("%SenderDisplayName%","$approverDisplayNameV1 (Approval Portal)")
+
     $reqObj = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "Select * From SMS_UserApplicationRequest where RequestGUID='$requestID'" | Get-CimInstance
     $reqObjRequestor = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "Select * From SMS_R_USER where Sid='$($reqObj.UserSid)'"
     $reqObjApprover = $authenticatedUser

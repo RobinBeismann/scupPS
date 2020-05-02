@@ -1,6 +1,6 @@
 ﻿$( 
     #Include Config
-    . ".\views\includes\core\config.ps1"
+    . "$(Get-PodeState -Name "PSScriptRoot")\views\includes\core\config.ps1"
 )
       <!-- Main Footer -->
       <footer class="main-footer">

@@ -10,12 +10,12 @@ function Get-CMAppApprovalHistory($requestObject){
 }
 
 
-#Request Information
-$requestorMachine = $Data.Query.submitrequestmachine
-$newMachine = $Data.Query.submitnewmachine
+
 
 if($operation -eq "approvaltakeoverpreview" -or $operation -eq "approvaltakeover" -and $(Test-scupPSRole -Name "helpdesk" -User $authenticatedUser)){
-
+    #Request Information
+    $requestorMachine = $Data.Query.submitrequestmachine
+    $newMachine = $Data.Query.submitnewmachine
     $oldComputerName = $requestorMachine
     $newComputerName = $newMachine
 

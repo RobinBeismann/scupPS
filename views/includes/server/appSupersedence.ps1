@@ -5,8 +5,9 @@ Add-PodeSchedule -Name 'migrateSupersededApprovals' -Cron '@hourly' -OnStart -Sc
 
     #Loading config.ps1
     Write-Host("Server: Loading 'config.ps1'..")
-    . ".\views\includes\core\config.ps1"
-    . ".\views\includes\lib\logging.ps1"
+    #Include Config
+    . (Get-PodeRelativePath -Path ".\views\includes\core\config.ps1" -JoinRoot -Resolve)
+    . (Get-PodeRelativePath -Path ".\views\includes\lib\logging.ps1" -JoinRoot -Resolve)
 
     function Get-CMAppApprovalHistory($requestObject){
         ($requestObject | Get-CimInstance).RequestHistory | ForEach-Object {

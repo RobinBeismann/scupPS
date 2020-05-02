@@ -4,7 +4,9 @@ Add-PodeSchedule -Name 'CacheApplications' -Cron '@hourly' -OnStart -ScriptBlock
     Start-Sleep -Seconds 10
     #Loading config.ps1
     Write-Host("Server: Loading 'config.ps1'..")
-    . ".\views\includes\core\config.ps1"
+    #Include Config
+    . "$(Get-PodeState -Name "PSScriptRoot")\views\includes\core\config.ps1"
+
     while(
         (Get-ServerReadyness) -eq $false
     ){
@@ -47,7 +49,7 @@ Add-PodeSchedule -Name 'CacheNavbar' -Cron '@hourly' -OnStart -ScriptBlock {
 
     $obj = [ordered]@{}
     $regex = "(?m)<!--.*Item Name: '(?'itemname'[^']*)' .*-->.*", "(?m)<!--.*Item Suburl: '(?'suburl'[^']*)' .*-->.*", "(?m)<!--.*Item Role: '(?'role'[^']*)' .*-->.*"
-    Get-ChildItem -Path ".\views\pages" -Filter "*.pode" | ForEach-Object {
+    Get-ChildItem -Path (Get-PodeRelativePath -Path ".\views\pages" -JoinRoot -Resolve) -Filter "*.pode" | ForEach-Object {
         $baseName = $_.BaseName
         $_ | Get-Content | Select-Object -First 10 | ForEach-Object {
             $string = $_
@@ -102,5 +104,6 @@ Add-PodeSchedule -Name 'saveStates' -Cron '@minutely' -ScriptBlock {
 Write-Host("Adding Scheduled Job to save states every minute..")
 Add-PodeSchedule -Name 'saveValues' -Cron '@hourly' -OnStart -ScriptBlock { 
     #Update the role with the group set under general settings
+    . "$(Get-PodeState -Name "PSScriptRoot")\views\includes\core\config.ps1"
     Set-scupPSRole -Name "admin" -Value (Get-scupPSValue -Name "scupPSAdminGroup")
 }

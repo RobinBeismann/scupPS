@@ -10,12 +10,13 @@ function Get-CMAppApprovalHistory($requestObject){
 }
 
 
-#Request Information
-$requestorMachineName = $Data.Query.submitrequestmachine
-$requestorUser = $Data.Query.submitrequestuser
-$requestorApplication = $Data.Query.submitrequestapplication
+
 
 if($operation -eq "approvalcreationpreview" -or $operation -eq "approvalcreation" -and $(Test-scupPSRole -Name "helpdesk" -User $authenticatedUser)){
+    #Request Information
+    $requestorMachineName = $Data.Query.submitrequestmachine
+    $requestorUser = $Data.Query.submitrequestuser
+    $requestorApplication = $Data.Query.submitrequestapplication
     
     $requestorMachine = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "Select * From SMS_R_SYSTEM WHERE Name='$requestorMachineName'" | Get-CimInstance
     $existingApproval = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "Select * From SMS_UserApplicationRequest WHERE RequestedMachine='$requestorMachineName' AND ModelName = '$requestorApplication'" | Get-CimInstance

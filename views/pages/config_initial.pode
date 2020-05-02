@@ -1,11 +1,11 @@
 <!-- ############################################### Includes ############################################# -->
 $( 
     #Include Config
-    . ".\views\includes\core\config.ps1"
-    . ".\views\includes\core\userLib.ps1"
+    . "$(Get-PodeState -Name "PSScriptRoot")\views\includes\core\config.ps1"
+    . "$(Get-PodeState -Name "PSScriptRoot")\views\includes\core\userLib.ps1"
     
     #Include Includes    
-    Get-ChildItem -Path "views\includes\lib" -File -Include "*.ps1" -Recurse | ForEach-Object {
+    Get-ChildItem -Path "$(Get-PodeState -Name "PSScriptRoot")\views\includes\lib" -File -Include "*.ps1" -Recurse | ForEach-Object {
         "<!-- Including: $($_.FullName) -->"
         . $_.FullName
     }
@@ -141,9 +141,11 @@ input.invalid {
         var client = new HttpClient();
                         
         client.get( suburl, function(response) {
-                if(!response || response.indexOf("True")<1){      
+                if(!response || !response.includes("True")){      
+                    console.log("Value " + fieldName + " is not yet ready, response from Api is: '" + response + "'");
                     document.getElementById(fieldName).ready = false;
                 }else{
+                    console.log("Value " + fieldName + " is ready, response from Api is: '" + response + "'");
                     document.getElementById(fieldName).ready = true;
                 }           
         });

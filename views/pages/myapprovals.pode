@@ -4,20 +4,11 @@
 <!-- ############################################### Includes ############################################# -->
 $( 
     #Include Config
-    . ".\views\includes\core\config.ps1"
-    . ".\views\includes\core\userLib.ps1"
-
-    #Check if this page was loaded through the page loader, otherwise break
-    if(
-        !$Data -or
-        !($Data.LoadedUsingPageLoader) -or
-        ($Data.LoadedUsingPageLoader -eq $false)    
-    ){
-        return $false
-    }
+    . "$(Get-PodeState -Name "PSScriptRoot")\views\includes\core\config.ps1"
+    . "$(Get-PodeState -Name "PSScriptRoot")\views\includes\core\userLib.ps1"
     
     #Include Includes    
-    Get-ChildItem -Path "views\includes\lib" -File -Include "*.ps1" -Recurse | ForEach-Object {
+    Get-ChildItem -Path "$(Get-PodeState -Name "PSScriptRoot")\views\includes\lib" -File -Include "*.ps1" -Recurse | ForEach-Object {
         "<!-- Including: $($_.FullName) -->"
         . $_.FullName
     }

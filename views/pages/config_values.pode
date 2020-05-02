@@ -2,11 +2,11 @@
 <!-- ############################################### Includes ############################################# -->
 $( 
     #Include Config
-    . ".\views\includes\core\config.ps1"
-    . ".\views\includes\core\userLib.ps1"
+    . "$(Get-PodeState -Name "PSScriptRoot")\views\includes\core\config.ps1"
+    . "$(Get-PodeState -Name "PSScriptRoot")\views\includes\core\userLib.ps1"
     
     #Include Includes    
-    Get-ChildItem -Path "views\includes\lib" -File -Include "*.ps1" -Recurse | ForEach-Object {
+    Get-ChildItem -Path "$(Get-PodeState -Name "PSScriptRoot")\views\includes\lib" -File -Include "*.ps1" -Recurse | ForEach-Object {
         "<!-- Including: $($_.FullName) -->"
         . $_.FullName
     }

@@ -1,3 +1,5 @@
+. "$(Get-PodeState -Name "PSScriptRoot")\views\includes\server\database.ps1"
+
 $ConfigVals = [ordered]@{
     <#
         Type = 0 -> First Tab of Setup Wizard
@@ -83,24 +85,28 @@ $ConfigVals = [ordered]@{
         Type = 4
     }
     "scupPSRoles" = @{
-        DefaultValue = @{
+        DefaultValue = (@{
             admin = "will-be-overwritten"
             helpdesk = "Please select"
-        }
+        } | ConvertTo-Json)
         Description = 'Roles Definition'
     }
 }
 
 function Get-scupPSValue($Name){
-
-    if(!($config = Get-PodeState -Name "scupPSConfig")){
-        $config = @{}
-    }
-
+    
     if(!$Name){
-        return $config
-    }elseif($config.$Name){
-        return $config.$Name
+        return (
+            Execute-SQLiteQuery -Query "
+            SELECT
+                config.config_name AS Name,
+                config.config_value AS Value
+            FROM
+                config
+            "
+        )    
+    }elseif($res = Execute-SQLiteQuery -Query "SELECT config_value FROM config WHERE config_name = '$Name'"){
+        return $res.config_value
     }elseif($ConfigVals[$Name]){
         return $ConfigVals[$Name].DefaultValue
     }
@@ -109,22 +115,18 @@ function Get-scupPSValue($Name){
 }
 
 function Set-scupPSValue($Name,$Value){
-    if(!($config = Get-PodeState -Name "scupPSConfig")){
-        $config = @{}
-    }
-
-    if(
-        !($config.$Name) -or
-        ($config | Get-Member -Name $Name -ErrorAction SilentlyContinue) -ne $Value
-    ){
-        Write-Host("Set-scupPSValue: Updating Config Val '$Name' to '$Value'")
-        $config | Add-Member -MemberType NoteProperty -Name $Name -Value $Value -Force        
-        $config | Set-PodeState -Name "scupPSConfig" | Out-Null
-        try{
-            Invoke-PodeSchedule -Name 'saveStates' | Out-Null
-        }catch{
-            Write-Host("Failed to invoke state saving procedure.")
-        }
+    if($Name -and $Value){
+        Execute-SQLiteQuery -Query @"
+        INSERT OR REPLACE INTO 
+            "main"."config" 
+            (
+                "config_name", 
+                "config_value"
+            ) VALUES (
+                '$Name', 
+                '$Value'
+            )
+"@
     }
 }
 

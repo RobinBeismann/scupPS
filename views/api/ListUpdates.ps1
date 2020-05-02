@@ -1,8 +1,7 @@
-#Request Information
-$requestorMachine = $Data.Query.submitrequestmachine
-
 if($operation -eq "listupdates" -and $(Test-scupPSRole -Name "helpdesk" -User $authenticatedUser)){
-    
+    #Request Information
+    $requestorMachine = $Data.Query.submitrequestmachine
+
     $updates = Get-CimInstance -ComputerName (Get-scupPSValue -Name "SCCM_SiteServer") -Namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -Query ("
         SELECT 
             SMS_R_System.Name,SMS_G_System_QUICK_FIX_ENGINEERING.HotFixID,SMS_G_System_QUICK_FIX_ENGINEERING.Description,SMS_G_System_QUICK_FIX_ENGINEERING.Caption,SMS_G_System_QUICK_FIX_ENGINEERING.Timestamp
