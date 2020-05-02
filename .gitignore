@@ -6,3 +6,5 @@
 *.code-workspace
 logs/*
 states.json
+db/db.sqlite
+pode/*
