@@ -2,93 +2,114 @@
 Write-Host("Adding Scheduled Job to cache applications..")
 Add-PodeSchedule -Name 'CacheApplications' -Cron '@hourly' -OnStart -ScriptBlock {
     Start-Sleep -Seconds 10
-    #Loading config.ps1
-    Write-Host("Server: Loading 'config.ps1'..")
+    
     #Include Config
     . "$(Get-PodeState -Name "PSScriptRoot")\views\includes\core\config.ps1"
 
-    while(
-        (Get-ServerReadyness) -eq $false
-    ){
-        Start-Sleep -Seconds 10
-    }
-    $applications = @{}
-    Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "
-        SELECT 
-            ModelName,CI_ID 
-        FROM 
-            SMS_Application 
-        WHERE 
-            IsLatest = 1
-    " | Get-CimInstance | ForEach-Object {    
-        $data = $null
-        [xml]$xml = $_ | Select-Object -ExpandProperty SDMPackageXML
-        if($xml.AppMgmtDigest.Application.DisplayInfo.Info.Count -gt 1){
-            $data = $xml.AppMgmtDigest.Application.DisplayInfo.Info | Where-Object {
-                $_.Language.ToLower() -eq "en-US" -or
-                $_.Language.ToLower() -eq "en"
+    if(Test-scupPSJobMaster){
+        Write-Host("Caching Applications..")
+        while(
+            (Get-ServerReadyness) -eq $false
+        ){
+            Start-Sleep -Seconds 10
+        }
+        $applications = @{}
+        Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "
+            SELECT 
+                ModelName,CI_ID 
+            FROM 
+                SMS_Application 
+            WHERE 
+                IsLatest = 1
+        " | Get-CimInstance | ForEach-Object {    
+            $data = $null
+            [xml]$xml = $_ | Select-Object -ExpandProperty SDMPackageXML
+            if($xml.AppMgmtDigest.Application.DisplayInfo.Info.Count -gt 1){
+                $data = $xml.AppMgmtDigest.Application.DisplayInfo.Info | Where-Object {
+                    $_.Language.ToLower() -eq "en-US" -or
+                    $_.Language.ToLower() -eq "en"
+                }
+            }else{
+                $data = $xml.AppMgmtDigest.Application.DisplayInfo.Info
             }
-        }else{
-            $data = $xml.AppMgmtDigest.Application.DisplayInfo.Info
+            
+            Execute-SQLiteQuery -Query @"
+            INSERT OR REPLACE INTO 
+                "main"."applications" 
+                (
+                    "app_modelname", 
+                    "app_publisher", 
+                    "app_title", 
+                    "app_description"
+                ) VALUES (
+                    "$($_.Modelname)", 
+                    "$($data.Publisher)", 
+                    "$($data.Title)", 
+                    "$($data.Description)"
+                )
+"@
         }
-        
-        $applications.($_.Modelname) = @{
-            Publisher =$data.Publisher
-            Title = $data.Title
-            Description = $data.Description
-        }
+        Write-Host("Cached $((Execute-SQLiteQuery -Query "SELECT COUNT(app_modelname) FROM applications;").'COUNT(app_modelname)') Applications..")
     }
-
-    Write-Host("Caching $($applications.Count) Applications..")
-    Set-PodeState -Name "cache_Applications" -Value $applications
 }
 
 # Cache Navigation Bar
 Write-Host("Adding Scheduled Job to rebuild the Navigation Bar once per hour and initially at the start..")
 Add-PodeSchedule -Name 'CacheNavbar' -Cron '@hourly' -OnStart -ScriptBlock { 
+    . "$(Get-PodeState -Name "PSScriptRoot")\views\includes\core\config.ps1"
 
-    $obj = [ordered]@{}
-    $regex = "(?m)<!--.*Item Name: '(?'itemname'[^']*)' .*-->.*", "(?m)<!--.*Item Suburl: '(?'suburl'[^']*)' .*-->.*", "(?m)<!--.*Item Role: '(?'role'[^']*)' .*-->.*"
-    Get-ChildItem -Path (Get-PodeRelativePath -Path ".\views\pages" -JoinRoot -Resolve) -Filter "*.pode" | ForEach-Object {
-        $baseName = $_.BaseName
-        $_ | Get-Content | Select-Object -First 10 | ForEach-Object {
-            $string = $_
-            
-            $matches = @{}
-            $regex.GetEnumerator() | Foreach-Object {
-                if(
-                    ($match = [regex]::Match($string,$_)) -and
-                    ($match.Success -eq $true) -and
-                    ($match.Groups.Count -gt 1)    
-                ){
-                    $match.Groups | Where-Object { $_.Name.Length -gt 3 } | ForEach-Object {
-                        $matches.($_.Name) = $_.Value
+    if(Test-scupPSJobMaster){
+        Write-Host("Caching Nav Items..")
+        $regex = "(?m)<!--.*Item Name: '(?'itemname'[^']*)' .*-->.*", "(?m)<!--.*Item Suburl: '(?'suburl'[^']*)' .*-->.*", "(?m)<!--.*Item Role: '(?'role'[^']*)' .*-->.*"
+        Get-ChildItem -Path "$(Get-PodeState -Name "PSScriptRoot")\views\pages" -Filter "*.pode" | ForEach-Object {
+            $baseName = $_.BaseName
+            $_ | Get-Content | Select-Object -First 10 | ForEach-Object {
+                $string = $_
+                
+                $matches = @{}
+                $regex.GetEnumerator() | Foreach-Object {
+                    if(
+                        ($match = [regex]::Match($string,$_)) -and
+                        ($match.Success -eq $true) -and
+                        ($match.Groups.Count -gt 1)    
+                    ){
+                        $match.Groups | Where-Object { $_.Name.Length -gt 3 } | ForEach-Object {
+                            $matches.($_.Name) = $_.Value
+                        }
                     }
                 }
-            }
-        
-            if(
-                ($itemName = $matches['itemname'])
-            ){
-                $obj.$itemName = @{}
-                $obj.$itemName.baseName = $baseName
-                $url = $baseName
+            
                 if(
-                    ($suburl = $matches['suburl'])
+                    ($itemName = $matches['itemname'])
                 ){
-                    $url = $url + $suburl
+                    $url = $baseName
+                    if(
+                        ($suburl = $matches['suburl'])
+                    ){
+                        $url = $url + $suburl
+                    }
+                    $role = $matches['role']
+
+                    Execute-SQLiteQuery -Query @"
+                    INSERT OR REPLACE INTO 
+                        "main"."nav" 
+                        (
+                            "nav_name", 
+                            "nav_baseName", 
+                            "nav_role", 
+                            "nav_url"
+                        ) VALUES (
+                            "$itemName", 
+                            "$baseName", 
+                            "$role", 
+                            "$url"
+                        )
+"@
                 }
-                if(
-                    ($role = $matches['role'])
-                ){
-                    $obj.$itemname.role = $role
-                }
-                $obj.$itemName.url = $url
             }
         }
+        Write-Host("Cached $((Execute-SQLiteQuery -Query "SELECT COUNT(nav_name) FROM nav;").'COUNT(nav_name)') Nav Items..")
     }
-    Set-PodeState -Name "navItems" -Value $obj | Out-Null
-    Invoke-PodeSchedule -Name 'saveStates'
 }
 
 # Regulary save states

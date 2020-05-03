@@ -29,7 +29,7 @@ function Execute-SQLiteQuery($Query) {
             $Data.Tables[0] -and 
             $Data.Tables[0].Rows.Count -gt 0
         ){
-            $TABLE = $Data.Tables
+            $TABLE = $Data.Tables.Rows
         }else{
             $TABLE = $false
         }
