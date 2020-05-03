@@ -116,7 +116,7 @@ select.invalid {
         var client = new HttpClient();
                         
         client.get( suburl, function(response) {
-                if(!response || response.indexOf("True")<1){      
+                if(!response || !response.includes("True")){      
                     document.getElementById(fieldName).className = " invalid";
                 }else{
                     document.getElementById(fieldName).className = "";
@@ -143,7 +143,7 @@ if(
     $(
         $groups = Get-CimInstance -Computer (Get-scupPSValue -Name "SCCM_SiteServer") -Namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -Query "SELECT Name FROM SMS_R_UserGroup" | Select-Object -ExpandProperty Name | Sort-Object
 
-        (Get-scupPSRole).GetEnumerator() | ForEach-Object {
+        (Get-scupPSRole).PSObject.Properties | ForEach-Object {
             $val = [System.Net.WebUtility]::HtmlEncode($_.Value)
             $curVal = $_.Value
 

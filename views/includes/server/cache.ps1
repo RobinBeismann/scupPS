@@ -90,21 +90,21 @@ Add-PodeSchedule -Name 'CacheNavbar' -Cron '@hourly' -OnStart -ScriptBlock {
                     }
                     $role = $matches['role']
 
-                    Execute-SQLiteQuery -Query @"
+                    Execute-SQLiteQuery -Query "
                     INSERT OR REPLACE INTO 
-                        "main"."nav" 
+                        `"main`".`"nav`" 
                         (
-                            "nav_name", 
-                            "nav_baseName", 
-                            "nav_role", 
-                            "nav_url"
+                            'nav_name', 
+                            'nav_baseName'
+                            $(if($role){",'nav_role'"}) 
+                            $(if($url){",'nav_url'"})
                         ) VALUES (
-                            "$itemName", 
-                            "$baseName", 
-                            "$role", 
-                            "$url"
+                            '$itemName', 
+                            '$baseName'
+                            $(if($role){",'$role'"})
+                            $(if($url){",'$url'"})
                         )
-"@
+                        "
                 }
             }
         }

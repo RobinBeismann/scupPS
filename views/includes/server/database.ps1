@@ -1,4 +1,7 @@
+. "$(Get-PodeState -Name "PSScriptRoot")\views\includes\lib\logging.ps1"
+
 function Execute-SQLiteQuery($Query) {
+    Write-scupPSLog($query)
     Add-Type -Path "$(Get-PodeState -Name "PSScriptRoot")\libs\System.Data.SQLite.dll"
     $db_data_source = "$(Get-PodeState -Name "PSScriptRoot")\db\db.sqlite"
     $db_data_source = $db_data_source.Replace("\","\\")
@@ -55,4 +58,12 @@ Get-ChildItem -Path "$(Get-PodeState -Name "PSScriptRoot")\db\schema_updates" -F
 } | ForEach-Object {
     Write-Host("Applying Database Upgrade Version $($_.BaseName)")
     Execute-SQLiteQuery -Query ($_ | Get-Content -Raw)
+}
+
+function Check-IsNullWithSQLDBNullSupport ($Value) {
+    if ($Value -eq [System.DBNull]::Value -or $Value -eq $null) {
+        return $true
+    } else {
+        return $false
+    }
 }

@@ -79,7 +79,7 @@
             </h6>
             
             $(
-                Execute-SQLiteQuery -Query "SELECT * FROM nav WHERE nav_role = '';" | ForEach-Object {       
+                Execute-SQLiteQuery -Query "SELECT * FROM nav WHERE nav_role IS NULL;" | ForEach-Object {       
                     "                        
                     <li class=`"nav-item`">
                         <a id=`"nav-$($_.nav_url)`" href=`"?page=$($_.nav_url)`" class=`"nav-link`">
@@ -90,7 +90,7 @@
                     "
                 }
 
-                $categories = Execute-SQLiteQuery -Query "SELECT * FROM nav WHERE nav_role != '';" | ForEach-Object { $_.nav_role } | Select-Object -Unique
+                $categories = Execute-SQLiteQuery -Query "SELECT * FROM nav WHERE nav_role IS NOT NULL;" | ForEach-Object { $_.nav_role } | Select-Object -Unique
                 $categories.GetEnumerator() | ForEach-Object {
                     $role = $_
                     if(Test-scupPSRole -Name $role -User $authenticatedUser){

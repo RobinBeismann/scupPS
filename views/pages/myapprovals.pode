@@ -168,14 +168,14 @@ $(
         if(!$ShowApprovals -or $ShowApprovals -ne "history"){
 
             $managedRequests | ForEach-Object {
-                $app = (Get-PodeState -Name "cache_Applications").$($_.SMS_UserApplicationRequest.ModelName)
+                $app = Execute-SQLiteQuery -Query "SELECT * FROM applications WHERE app_modelname = '$($_.SMS_UserApplicationRequest.ModelName)'"
                 "<tr>
                     <td scope='col'>$($_.SMS_R_User.FullUserName)</td>
                     <td scope='col'>$($_.SMS_R_User.$(Get-scupPSValue -Name "Attribute_costCenter"))</td>
                     <td scope='col'><a href='mailto:$($_.SMS_R_User.Mail)'>$($_.SMS_R_User.Mail)</a></td>
-                    <td scope='col'>$($app.Title)</td>
+                    <td scope='col'>$($app.app_title)</td>
                     <td scope='col'>$($_.SMS_UserApplicationRequest.RequestedMachine)</td>
-                    <td scope='col'>$(Replace-HTMLVariables($app.Description))</td>
+                    <td scope='col'>$(Replace-HTMLVariables($app.app_description))</td>
                     <td scope='col'>$($_.SMS_UserApplicationRequest.Comments)</td>
                     <td scope='col'>
                         <button id='btn_approve_$($_.SMS_UserApplicationRequest.RequestGuid)' name='btn_approve' class='btn btn-primary' onclick='handleRequest(`"approverequest`",`"$($_.SMS_UserApplicationRequest.RequestGuid)`"`)'>Approve</button>
@@ -188,14 +188,14 @@ $(
         }else{
             #Build history request table
             $managedRequests | ForEach-Object {
-                $app = (Get-PodeState -Name "cache_Applications").$($_.SMS_UserApplicationRequest.ModelName)
+                $app = Execute-SQLiteQuery -Query "SELECT * FROM applications WHERE app_modelname = '$($_.SMS_UserApplicationRequest.ModelName)'"
                 "<tr>
                     <td scope='col'>$($_.SMS_R_User.FullUserName)</td>
                     <td scope='col'>$($_.SMS_R_User.$(Get-scupPSValue -Name "Attribute_costCenter"))</td>
                     <td scope='col'><a href='mailto:$($_.SMS_R_User.Mail)'>$($_.SMS_R_User.Mail)</a></td>
-                    <td scope='col'>$($app.Title)</td>
+                    <td scope='col'>$($app.app_title)</td>
                     <td scope='col'>$($_.SMS_UserApplicationRequest.RequestedMachine)</td>
-                    <td scope='col'>$(Replace-HTMLVariables($app.Description))</td>
+                    <td scope='col'>$(Replace-HTMLVariables($app.app_description))</td>
                     <td scope='col'>$($_.SMS_UserApplicationRequest.Comments)</td>
                     <td scope='col'>
                     <button id='btn_approve_$($_.SMS_UserApplicationRequest.RequestGuid)' name='btn_approve' class='btn btn-primary' onclick='handleRequest(`"approverequest`",`"$($_.SMS_UserApplicationRequest.RequestGuid)`"`)'>Approve</button>
@@ -280,11 +280,11 @@ $(
         '
 
         $managedRequests | ForEach-Object -Parallel {
-            $app = (Get-PodeState -Name "cache_Applications").$($_.SMS_UserApplicationRequest.ModelName)
+            $app = Execute-SQLiteQuery -Query "SELECT * FROM applications WHERE app_modelname = '$($_.SMS_UserApplicationRequest.ModelName)'"
             "<tr>
-                <td scope='col'>$($app.Title)</td>
+                <td scope='col'>$($app.app_title)</td>
                 <td scope='col'>$($_.SMS_UserApplicationRequest.RequestedMachine)</td>
-                <td scope='col'>$(Replace-HTMLVariables($app.Description))</td>
+                <td scope='col'>$(Replace-HTMLVariables($app.app_description))</td>
                 <td scope='col'>$($_.SMS_UserApplicationRequest.Comments)</td>
             </tr>
             "

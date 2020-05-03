@@ -4,9 +4,12 @@ try{
     Write-Host("Loaded local Pode module.")
 }catch{
     #Fail back to the system module
+    Install-Module -Scope CurrentUser -Name 'Pode' -Confirm:$false -Force
     Import-Module -Name "Pode"
     Write-Host("Loaded system Pode module.")
 }
+#Install MSSQL Module
+Install-Module -Scope CurrentUser -Name 'Sqlserver' -Confirm:$false -Force
 
 
 Start-PodeServer -Threads (Get-CimInstance -ClassName "Win32_Processor" | Select-Object -ExpandProperty NumberOfLogicalProcessors) -ScriptBlock {
@@ -35,6 +38,9 @@ Start-PodeServer -Threads (Get-CimInstance -ClassName "Win32_Processor" | Select
         Set-PodeState -Name "sessionSecret" -Value $secretGen
         Save-PodeState -Path ".\states.json"
     }
+
+    #Load SQL Module
+    Import-PodeModule -Name 'SqlServer'
     
     #Authentication 
     Enable-PodeSessionMiddleware -Secret (Get-PodeState -Name "sessionSecret") -Duration 120 -Extend

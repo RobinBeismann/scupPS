@@ -105,7 +105,7 @@ input.invalid {
         var client = new HttpClient();
                         
         client.get( suburl, function(response) {
-                if(!response || response.indexOf("True")<1){      
+                if(!response || !response.includes("True")){      
                     document.getElementById(fieldName).ready = false;
                     document.getElementById(fieldName).className = " invalid";
                 }else{
