@@ -1,23 +1,11 @@
 <!-- Item Name: 'My Deputies' -->
 
-<!-- ############################################### Includes ############################################# -->
-$( 
-    #Include Config
-    . "$(Get-PodeState -Name "PSScriptRoot")\views\includes\core\config.ps1"
-    . "$(Get-PodeState -Name "PSScriptRoot")\views\includes\core\userLib.ps1"
-    
-    #Include Includes    
-    Get-ChildItem -Path "$(Get-PodeState -Name "PSScriptRoot")\views\includes\lib" -File -Include "*.ps1" -Recurse | ForEach-Object {
-        "<!-- Including: $($_.FullName) -->"
-        . $_.FullName
-    }
-)
 <!-- ############################################### Code ################################################# -->
 
 $(
     if(
         $authenticatedUser -and
-        $managedCostCenters
+        (Get-scupPSManagedCostCenters($Data))
     ){
 
         #Search costcenter managers
@@ -47,7 +35,7 @@ $(
         }
 
         #Split them
-        $managedCostCenters = $managedCostCenters.Split(";")
+        (Get-scupPSManagedCostCenters($Data)) = (Get-scupPSManagedCostCenters($Data)).Split(";")
 
         #Initial text
         "The following managers can also approve requests for your costcenters:<br/><br/>"

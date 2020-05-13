@@ -1,18 +1,6 @@
 <!-- Item Name: 'My Approvals (Pending)' -->
 <!-- Item Name: 'My Approvals (History)' Item Suburl: '&ShowApprovals=history' -->
 
-<!-- ############################################### Includes ############################################# -->
-$( 
-    #Include Config
-    . "$(Get-PodeState -Name "PSScriptRoot")\views\includes\core\config.ps1"
-    . "$(Get-PodeState -Name "PSScriptRoot")\views\includes\core\userLib.ps1"
-    
-    #Include Includes    
-    Get-ChildItem -Path "$(Get-PodeState -Name "PSScriptRoot")\views\includes\lib" -File -Include "*.ps1" -Recurse | ForEach-Object {
-        "<!-- Including: $($_.FullName) -->"
-        . $_.FullName
-    }
-)
 <!-- ############################################### Code ################################################# -->
 <script type="text/javascript">
 var url = '/api';
@@ -80,9 +68,40 @@ function handleRequest(requestAction,requestID,userFirstname,userLastname,userMa
 </script>
 
 $(
+    $query = "
+        SELECT
+            [dbo].[applications].app_modelname AS app_modelname,
+            [dbo].[applications].app_publisher AS app_publisher,
+            [dbo].[applications].app_title AS app_title,
+            [dbo].[applications].app_description AS app_description,
+            [dbo].[users].givenName AS user_givenName,
+            [dbo].[users].sn AS user_surname,
+            [dbo].[users].mail AS user_mail,
+            [dbo].[users].FullUserName AS user_displayName,
+            [dbo].[ApplicationRequests].RequestGuid AS req_guid,
+            [dbo].[ApplicationRequests].Comments AS req_comments,
+            [dbo].[ApplicationRequests].CurrentState AS req_currentState,
+            [dbo].[ApplicationRequests].RequestHistory AS req_history,
+            [dbo].[ApplicationRequests].RequestedMachine AS req_machine
+        FROM
+            [dbo].[ApplicationRequests]
+        JOIN
+            [dbo].[users]
+        ON
+            [dbo].[users].[SID] = [dbo].[ApplicationRequests].UserSid
+        JOIN
+            [dbo].[applications]
+        ON
+            [dbo].[applications].[app_modelname] = [dbo].[ApplicationRequests].[ModelName]
+    "
+
+    $authenticatedUser = (Get-scupPSAuthUser($Data))
+    $attrCostCenter = Get-scupPSValue -Name "Attribute_costCenter"
+    $attrManagedCostCenters = Get-scupPSValue -Name "Attribute_managedcostCenters"
+
     if(
         $authenticatedUser -and
-        $managedCostCenters
+        (Get-scupPSManagedCostCenters($Data))
     ){ 
         
         "<br/><br/>"
@@ -96,9 +115,9 @@ $(
 
         $ShowApprovals = $Data.Query['ShowApprovals']        
         if($ShowApprovals -ne "history"){
-            $queryAddition = "and SMS_UserApplicationRequest.CurrentState='1' and SMS_UserApplicationRequest.CurrentState!='2'"
+            $query = $query + "WHERE req_currentState = '1' and req_currentState !='2'"
         }else{        
-            $queryAddition = "and SMS_UserApplicationRequest.CurrentState!='1' and SMS_UserApplicationRequest.CurrentState!='2'"
+            $query = $query + "WHERE req_currentState != '1' and req_currentState !='2'"
         }
 
         #Get approval requests
@@ -118,8 +137,8 @@ $(
             SMS_R_User.FullUserName,
             SMS_R_User.UserGroupName,
             SMS_R_User.DistinguishedName,
-            SMS_R_User.$(Get-scupPSValue -Name "Attribute_managedcostCenters"),
-            SMS_R_User.$(Get-scupPSValue -Name "Attribute_costCenter"),
+            SMS_R_User.$($attrManagedCostCenters),
+            SMS_R_User.$($attrCostCenter),
             SMS_Application.LocalizedDisplayName,
             SMS_Application.ModelName,
             SMS_Application.CI_ID
@@ -171,11 +190,11 @@ $(
                 $app = Invoke-scupPSSqlQuery -Query "SELECT * FROM applications WHERE app_modelname = '$($_.SMS_UserApplicationRequest.ModelName)'"
                 "<tr>
                     <td scope='col'>$($_.SMS_R_User.FullUserName)</td>
-                    <td scope='col'>$($_.SMS_R_User.$(Get-scupPSValue -Name "Attribute_costCenter"))</td>
+                    <td scope='col'>$($_.SMS_R_User.$Attribute_costCenter)</td>
                     <td scope='col'><a href='mailto:$($_.SMS_R_User.Mail)'>$($_.SMS_R_User.Mail)</a></td>
                     <td scope='col'>$($app.app_title)</td>
                     <td scope='col'>$($_.SMS_UserApplicationRequest.RequestedMachine)</td>
-                    <td scope='col'>$(Replace-HTMLVariables($app.app_description))</td>
+                    <td scope='col'>$(Get-HTMLString($app.app_description))</td>
                     <td scope='col'>$($_.SMS_UserApplicationRequest.Comments)</td>
                     <td scope='col'>
                         <button id='btn_approve_$($_.SMS_UserApplicationRequest.RequestGuid)' name='btn_approve' class='btn btn-primary' onclick='handleRequest(`"approverequest`",`"$($_.SMS_UserApplicationRequest.RequestGuid)`"`)'>Approve</button>
@@ -191,11 +210,11 @@ $(
                 $app = Invoke-scupPSSqlQuery -Query "SELECT * FROM applications WHERE app_modelname = '$($_.SMS_UserApplicationRequest.ModelName)'"
                 "<tr>
                     <td scope='col'>$($_.SMS_R_User.FullUserName)</td>
-                    <td scope='col'>$($_.SMS_R_User.$(Get-scupPSValue -Name "Attribute_costCenter"))</td>
+                    <td scope='col'>$($_.SMS_R_User.$($attrCostCenter))</td>
                     <td scope='col'><a href='mailto:$($_.SMS_R_User.Mail)'>$($_.SMS_R_User.Mail)</a></td>
                     <td scope='col'>$($app.app_title)</td>
                     <td scope='col'>$($_.SMS_UserApplicationRequest.RequestedMachine)</td>
-                    <td scope='col'>$(Replace-HTMLVariables($app.app_description))</td>
+                    <td scope='col'>$(Get-HTMLString($app.app_description))</td>
                     <td scope='col'>$($_.SMS_UserApplicationRequest.Comments)</td>
                     <td scope='col'>
                     <button id='btn_approve_$($_.SMS_UserApplicationRequest.RequestGuid)' name='btn_approve' class='btn btn-primary' onclick='handleRequest(`"approverequest`",`"$($_.SMS_UserApplicationRequest.RequestGuid)`"`)'>Approve</button>
@@ -247,8 +266,8 @@ $(
             SMS_R_User.FullUserName,
             SMS_R_User.UserGroupName,
             SMS_R_User.DistinguishedName,
-            SMS_R_User.$(Get-scupPSValue -Name "Attribute_managedcostCenters"),
-            SMS_R_User.$(Get-scupPSValue -Name "Attribute_costCenter"),
+            SMS_R_User.$($attrManagedCostCenters),
+            SMS_R_User.$($attrCostCenter),
             SMS_Application.LocalizedDisplayName,
             SMS_Application.ModelName,
             SMS_Application.CI_ID
@@ -284,7 +303,7 @@ $(
             "<tr>
                 <td scope='col'>$($app.app_title)</td>
                 <td scope='col'>$($_.SMS_UserApplicationRequest.RequestedMachine)</td>
-                <td scope='col'>$(Replace-HTMLVariables($app.app_description))</td>
+                <td scope='col'>$(Get-HTMLString($app.app_description))</td>
                 <td scope='col'>$($_.SMS_UserApplicationRequest.Comments)</td>
             </tr>
             "

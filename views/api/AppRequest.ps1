@@ -1,4 +1,3 @@
-
 if(
     ($operation -eq "approverequest") -or
     ($operation -eq "denyrequest") -or
@@ -108,7 +107,7 @@ if(
         $userText = $userText.Replace("%requestorMachine%",$requestorMachine)
         $userText = $userText.Replace("%denyreason%",$denyreason)
         $userText = $userText.Replace("%mailSignature%",$(Get-scupPSValue -Name "smtpSignature"))
-        $userText = Replace-HTMLVariables -Value $userText
+        $userText = Get-HTMLString -Value $userText
 
         if($requestorMail){
             Send-CustomMailMessage -SmtpServer $(Get-scupPSValue -Name "smtpServer") -from $localSender -ReplyTo $(Get-scupPSValue -Name "smtpReplyTo") -subject $mailSubject -to ($requestorMail,$approverMail) -CC $(Get-scupPSValue -Name "smtpAdditionalRecipient") -body $userText -BodyAsHtml

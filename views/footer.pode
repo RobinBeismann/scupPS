@@ -1,8 +1,4 @@
-﻿$( 
-    #Include Config
-    . "$(Get-PodeState -Name "PSScriptRoot")\views\includes\core\config.ps1"
-)
-      <!-- Main Footer -->
+﻿      <!-- Main Footer -->
       <footer class="main-footer">
         <!-- Default to the left -->
         $(Get-scupPSValue -Name "siteCopyrightText")        

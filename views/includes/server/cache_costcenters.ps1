@@ -3,9 +3,6 @@ Write-Host("Adding Scheduled Job to cache costcenters..")
 Add-PodeSchedule -Name 'CacheCostcenters' -Cron '@hourly' -OnStart -ScriptBlock {
     Start-Sleep -Seconds 10
     
-    #Include Config
-    . "$(Get-PodeState -Name "PSScriptRoot")\views\includes\core\config.ps1"
-
     if(Test-scupPSJobMaster){
         $costcenters = @{}
         $attrManagedCostcenters = Get-scupPSValue -Name "Attribute_managedcostCenters"
@@ -21,10 +18,10 @@ Add-PodeSchedule -Name 'CacheCostcenters' -Cron '@hourly' -OnStart -ScriptBlock 
         " | ForEach-Object {    
             $user = $_
             if(
-                ($managedCostcenters = $_.$attrManagedCostcenters) -and
-                ($managedCostcenters = $managedCostcenters.Split(";"))
+                ($managedCostCenters = $_.$attrManagedCostcenters) -and
+                ($managedCostCenters = $managedCostCenters.Split(";"))
             ){
-                $managedCostcenters | ForEach-Object {
+                $managedCostCenters | ForEach-Object {
                     if(!$costcenters.$_){
                         $costcenters.$_ = @()
                     }

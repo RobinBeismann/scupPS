@@ -1,14 +1,3 @@
-. "$(Get-PodeState -Name "PSScriptRoot")\views\includes\lib\logging.ps1"
-
-function Invoke-scupPSSqlQuery($Query,$Parameters){    
-    if(!$Parameters){
-        $Parameters = @{}
-    }
-    return (
-        Invoke-Sqlcmd2 -ServerInstance (Get-PodeState -Name "sqlInstance") -Database (Get-PodeState -Name "sqlDB") -SqlParameters $Parameters -ErrorAction Stop -Query $Query
-    )
-}
-
 #Initiate DB if not already done
 if(
     (
@@ -50,7 +39,7 @@ if(
 $dbVersion = (Invoke-scupPSSqlQuery -Query "SELECT * FROM db WHERE db_name = 'db_version'").db_value
 
 $continue = $true
-Get-ChildItem -Path "$(Get-PodeState -Name "PSScriptRoot")\db\schema_updates" -Filter "*.sql" | Where-Object {
+Get-ChildItem -Path "$(Get-PodeState -Name "PSScriptRoot")\db\schema_updates" -Filter "*.sql" | Sort-Object { [int]$_.BaseName } | Where-Object {
     $version = [int]$_.BaseName
     $version -gt $dbVersion
 } | ForEach-Object {

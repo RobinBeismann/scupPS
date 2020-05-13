@@ -1,8 +1,4 @@
-﻿$( 
-    #Include Config
-    . "$(Get-PodeState -Name "PSScriptRoot")\views\includes\core\config.ps1"
-)
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />

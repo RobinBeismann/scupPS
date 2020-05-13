@@ -1,9 +1,3 @@
-$(
-    #Include Config
-    . "$(Get-PodeState -Name "PSScriptRoot")\views\includes\core\config.ps1"
-    . "$(Get-PodeState -Name "PSScriptRoot")\views\includes\core\userLib.ps1"
-)
-
 if(
     ($operation -eq "setup") -and
     (

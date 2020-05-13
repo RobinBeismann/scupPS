@@ -1,9 +1,4 @@
-﻿$( 
-    #Include Config
-    . "$(Get-PodeState -Name "PSScriptRoot")\views\includes\core\config.ps1"
-    . "$(Get-PodeState -Name "PSScriptRoot")\views\includes\core\userLib.ps1"
-)
-<!-- ############################################### Header ############################################### -->
+﻿<!-- ############################################### Header ############################################### -->
 <body class="hold-transition sidebar-mini">
     <div class="wrapper">
       <!-- Navbar -->
@@ -26,6 +21,7 @@
                 <span class="brand-text font-weight-light">
                 <a href="#" class="d-block">
                 $(
+                    $authenticatedUser = (Get-scupPSAuthUser($Data))
                     if($Data.Auth.User.Name){
                         if($roles = Test-scupPSRole -User $authenticatedUser){
                             "Logged in as $($Data.Auth.User.Name) (Roles: $($roles -join ", "))"

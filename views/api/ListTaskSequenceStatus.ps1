@@ -37,7 +37,7 @@ if($operation -eq "listtasksequencestatus" -and $(Test-scupPSRole -Name "helpdes
             <td scope='col'>$($_.GroupName)</td>
             <td scope='col'>$($_.ActionName)</td>
             <td scope='col'>$($_.ExitCode)</td>
-            <td scope='col'>$(Replace-HTMLVariables -Value $_.ActionOutput)</td>
+            <td scope='col'>$(Get-HTMLString -Value $_.ActionOutput)</td>
         </tr>"
     }
 

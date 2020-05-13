@@ -1,31 +1,19 @@
 <!-- Item Name: 'My Users' -->
 
-<!-- ############################################### Includes ############################################# -->
-$( 
-    #Include Config
-    . "$(Get-PodeState -Name "PSScriptRoot")\views\includes\core\config.ps1"
-    . "$(Get-PodeState -Name "PSScriptRoot")\views\includes\core\userLib.ps1"
-    
-    #Include Includes    
-    Get-ChildItem -Path "$(Get-PodeState -Name "PSScriptRoot")\views\includes\lib" -File -Include "*.ps1" -Recurse | ForEach-Object {
-        "<!-- Including: $($_.FullName) -->"
-        . $_.FullName
-    }
-)
 <!-- ############################################### Code ################################################# -->
 
 $(
     if(
         $authenticatedUser -and
-        $managedCostCenters
+        (Get-scupPSManagedCostCenters($Data))
     ){
-        $managedCostCenters = $managedCostCenters.Split(";")
+        (Get-scupPSManagedCostCenters($Data)) = (Get-scupPSManagedCostCenters($Data)).Split(";")
 
         "You are managing the cost center of:</br><br/>"
         
         #Build where clause
         $queryAddition = ""
-        $managedCostCenters | ForEach-Object {
+        (Get-scupPSManagedCostCenters($Data)) | ForEach-Object {
             if($queryAddition -eq ""){
                 $queryAddition += "AND $(Get-scupPSValue -Name "Attribute_costCenter")='$_'"
             }else{

@@ -1,28 +1,3 @@
-#Get authenticated user
-if(
-    !($Data.Auth.User.DistinguishedName) -or
-    !($AuthenticatedUser = Get-CimInstance -Namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -Computer (Get-scupPSValue -Name "SCCM_SiteServer") -Query "select * from sms_r_user where DistinguishedName='$($Data.Auth.User.DistinguishedName.Replace("\","\\"))'") -or
-    !($doubleBackslashUsername = $authenticatedUser.UniqueUserName.Replace("\","\\"))
-){
-    $AuthenticatedUser = $null
-}
-
-#Check if the user is admin and if so set the variable, other pages may rely on this
-$userIsCostcenterManager = $null
-
-#Build up managed costcenter tables
-$managedCostCenters = $null
-if(
-    ($managedCostCenters = $authenticatedUser.$(Get-scupPSValue -Name "Attribute_managedcostCenters")) -and
-    ($managedCostCenters -ne "") -and
-    ($managedCostCenters -ne "#")    
-){
-    $managedCostCenters = $managedCostCenters.Split(";")
-    $userIsCostCenterManager = $true
-}else{
-    $managedCostCenters = $null
-}
-
 function Test-ApproveCompetence($Manager,$User){
     $isAdmin = Test-scupPSRole -Name "helpdesk" -User $Manager
     $managerCostcenters = $Manager.$(Get-scupPSValue -Name "Attribute_managedcostCenters")

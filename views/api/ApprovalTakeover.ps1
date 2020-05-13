@@ -1,17 +1,3 @@
-function Get-CMAppApprovalHistory($requestObject){
-    ($requestObject | Get-CimInstance).RequestHistory | ForEach-Object {
-    
-        [PSCustomObject]@{
-            Comments = $_.Comments
-            Date = $_.ModifiedDate
-            State = $_.State
-        }
-    } | Sort-Object -Property Date
-}
-
-
-
-
 if($operation -eq "approvaltakeoverpreview" -or $operation -eq "approvaltakeover" -and $(Test-scupPSRole -Name "helpdesk" -User $authenticatedUser)){
     #Request Information
     $requestorMachine = $Data.Query.submitrequestmachine

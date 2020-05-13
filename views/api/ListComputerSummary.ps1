@@ -1,6 +1,4 @@
 #Request Information
-
-
 if($operation -eq "listcomputersummary" -and $(Test-scupPSRole -Name "helpdesk" -User $authenticatedUser) -and ($collection = $Data.Query.submitcollection) -and ($collection -in $((Get-scupPSValue -Name "Collection_BrowsingAllowed").Split(";")))){
     
     #Get Computers

@@ -3,9 +3,6 @@ Write-Host("Adding Scheduled Job to cache applications..")
 Add-PodeSchedule -Name 'CacheApplications' -Cron '@hourly' -OnStart -ScriptBlock {
     Start-Sleep -Seconds 10
     
-    #Include Config
-    . "$(Get-PodeState -Name "PSScriptRoot")\views\includes\core\config.ps1"
-
     if(Test-scupPSJobMaster){
         Write-Host("Caching Applications..")
         while(
