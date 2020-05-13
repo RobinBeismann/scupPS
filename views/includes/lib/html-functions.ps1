@@ -1,4 +1,7 @@
 function Replace-HTMLVariables($Value){
+    if(!$Value){
+        $Value = ""
+    }
     $Value = $Value.Replace("&","&amp;")
     $Value = $Value.Replace("`n","</br>")
     $Value = $Value.Replace("`t", "&emsp;")

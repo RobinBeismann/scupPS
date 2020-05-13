@@ -1,26 +1,31 @@
-CREATE TABLE "main"."nav" (
-	"nav_name"  TEXT,
-	"nav_baseName"  TEXT,
-	"nav_role"  TEXT,
-	"nav_url"  TEXT,
-	"nav_created"	NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	"nav_modified"  TEXT,
-	PRIMARY KEY ("nav_name")
-)
-;
+DROP TABLE IF EXISTS [dbo].[costcenters]
+GO
 
---Create before update and after insert triggers:
-CREATE TRIGGER UPDATE_nav BEFORE UPDATE ON nav
-    BEGIN
-       UPDATE nav SET nav_modified = datetime('now', 'localtime')
-       WHERE rowid = new.rowid;
-    END
-;
-CREATE TRIGGER INSERT_nav AFTER INSERT ON nav
-    BEGIN
-       UPDATE nav SET nav_modified = datetime('now', 'localtime')
-       WHERE rowid = new.rowid;
-    END
-;
+CREATE TABLE [dbo].[costcenters](
+	[costcenter_id] [nchar](150) NOT NULL,
+	[costcenter_managers] [nvarchar](max) NOT NULL,
+	[costcenter_created] [datetime] NULL,
+	[costcenter_modified] [datetime] NULL,
+    ) ON [DATA] TEXTIMAGE_ON [DATA]
+GO
 
-UPDATE "main"."db" SET "db_version"=4 WHERE _ROWID_ = 1
+ALTER TABLE [dbo].[costcenters] ADD  CONSTRAINT [DF_costcenters_costcenter_created]  DEFAULT (CURRENT_TIMESTAMP) FOR [costcenter_created]
+GO
+
+DROP TRIGGER IF EXISTS [dbo].[tr_costcenters_Modified]
+GO
+
+CREATE TRIGGER [dbo].[tr_costcenters_Modified]
+   ON [dbo].[costcenters]
+   AFTER UPDATE
+AS BEGIN
+    SET NOCOUNT ON;
+    BEGIN
+        UPDATE [dbo].[costcenters]
+        SET costcenter_modified = CURRENT_TIMESTAMP
+    END 
+END
+
+GO
+
+UPDATE [dbo].[db] SET "db_value"=4 WHERE "db_name" = 'db_version';

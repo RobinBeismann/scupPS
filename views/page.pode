@@ -14,12 +14,15 @@ $(
         (Get-ServerReadyness) -eq $true
     ){
         $page = $Data.Query['page']
-        $navItem = Execute-SQLiteQuery -Query "SELECT * FROM nav WHERE nav_baseName = '$page';"
+        $navItem = (Get-PodeState -Name "navItems").GetEnumerator() | Where-Object { 
+            $page -and 
+            $_.Value.basename -eq $page 
+        }
         if(
             !$page -or
-            (Check-IsNullWithSQLDBNullSupport -Value $navItem.nav_role) -or
+            !$navItem.Value.role -or
             (
-                ($role = $navItem.nav_role) -and
+                ($role = $navItem.Value.role) -and
                 (Test-scupPSRole -Name $role -User $authenticatedUser)
             )
         ){

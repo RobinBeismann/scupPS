@@ -1,26 +1,37 @@
-CREATE TABLE "main"."applications" (
-    "app_modelname"  TEXT,
-    "app_publisher"  TEXT,
-    "app_title"  TEXT,
-    "app_description"  TEXT,
-	"app_created"  NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	"app_modified"  TEXT,
-	PRIMARY KEY ("app_modelname")
-)
-;
+DROP TABLE IF EXISTS [dbo].[applications]
+GO
 
---Create before update and after insert triggers:
-CREATE TRIGGER UPDATE_applications BEFORE UPDATE ON applications
-    BEGIN
-       UPDATE applications SET app_modified = datetime('now', 'localtime')
-       WHERE rowid = new.rowid;
-    END
-;
-CREATE TRIGGER INSERT_applications AFTER INSERT ON applications
-    BEGIN
-       UPDATE applications SET app_modified = datetime('now', 'localtime')
-       WHERE rowid = new.rowid;
-    END
-;
+CREATE TABLE [dbo].[applications](
+	[app_modelname] [nchar](150) NOT NULL,
+	[app_publisher] [nvarchar](max) NOT NULL,
+	[app_title] [nvarchar](max) NOT NULL,
+	[app_description] [nvarchar](max) NOT NULL,
+	[app_created] [datetime] NULL,
+	[app_modified] [datetime] NULL,
+    CONSTRAINT [PK_applications] PRIMARY KEY CLUSTERED 
+    (
+        [app_modelname] ASC
+    ) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [DATA]
+) ON [DATA] TEXTIMAGE_ON [DATA]
+GO
 
-UPDATE "main"."db" SET "db_version"=3 WHERE _ROWID_ = 1;
+ALTER TABLE [dbo].[applications] ADD  CONSTRAINT [DF_applications_app_created]  DEFAULT (CURRENT_TIMESTAMP) FOR [app_created]
+GO
+
+DROP TRIGGER IF EXISTS [dbo].[tr_applications_Modified]
+GO
+
+CREATE TRIGGER [dbo].[tr_applications_Modified]
+   ON [dbo].[applications]
+   AFTER UPDATE
+AS BEGIN
+    SET NOCOUNT ON;
+    BEGIN
+        UPDATE [dbo].[applications]
+        SET app_modified = CURRENT_TIMESTAMP
+    END 
+END
+
+GO
+
+UPDATE [dbo].[db] SET "db_value"=3 WHERE "db_name" = 'db_version';

@@ -1,69 +1,69 @@
 . "$(Get-PodeState -Name "PSScriptRoot")\views\includes\lib\logging.ps1"
 
-function Execute-SQLiteQuery($Query) {
-    Write-scupPSLog($query)
-    Add-Type -Path "$(Get-PodeState -Name "PSScriptRoot")\libs\System.Data.SQLite.dll"
-    $db_data_source = "$(Get-PodeState -Name "PSScriptRoot")\db\db.sqlite"
-    $db_data_source = $db_data_source.Replace("\","\\")
-    
-    $CONN = New-Object -TypeName System.Data.SQLite.SQLiteConnection
-  
-    $CONN.ConnectionString = "Data Source=$db_data_source"
-    $CONN.Open()
-
-    $CMD = $CONN.CreateCommand()
-    $CMD.CommandText = $Query
-
-    if (!($Query.Trim().ToLower().StartsWith("select"))) {
-        [void]$CMD.ExecuteNonQuery()
-        $CMD.Dispose()
-        $CONN.Close()
-
-        return $true
-    }else{
-        $ADAPTER = New-Object  -TypeName System.Data.SQLite.SQLiteDataAdapter $CMD
-        $DATA = New-Object System.Data.DataSet
-
-        [void]$ADAPTER.Fill($DATA)
-
-        
-        if(
-            $DATA.Tables -and 
-            $Data.Tables[0] -and 
-            $Data.Tables[0].Rows.Count -gt 0
-        ){
-            $TABLE = $Data.Tables.Rows
-        }else{
-            $TABLE = $false
-        }
-        $CMD.Dispose()
-        $CONN.Close()
-
-        return $TABLE
+function Invoke-scupPSSqlQuery($Query,$Parameters){    
+    if(!$Parameters){
+        $Parameters = @{}
     }
-
-    return $false
+    return (
+        Invoke-Sqlcmd2 -ServerInstance (Get-PodeState -Name "sqlInstance") -Database (Get-PodeState -Name "sqlDB") -SqlParameters $Parameters -ErrorAction Stop -Query $Query
+    )
 }
 
-#Check if DB exists, else create
-if(!(Test-Path -Path "$(Get-PodeState -Name "PSScriptRoot")\db\db.sqlite")){
-    Copy-Item -Path "$(Get-PodeState -Name "PSScriptRoot")\db\db.sqlite.default" -Destination "$(Get-PodeState -Name "PSScriptRoot")\db\db.sqlite"
+#Initiate DB if not already done
+if(
+    (
+        (Invoke-scupPSSqlQuery -Query "
+        IF 
+            OBJECT_ID (N'db', N'U') IS NOT NULL 
+            SELECT 
+                1 AS res 
+        ELSE 
+            SELECT 
+                0 AS res;").res -eq 0
+    ) -or
+    !(Invoke-scupPSSqlQuery -Query "SELECT * FROM db WHERE db_name = 'db_version'")
+){
+    Write-Host("Creating 'db' table..")
+    #Create DB Version Table
+    $query = "
+    DROP TABLE IF EXISTS [dbo].[db]
+    GO
+    
+    SET ANSI_NULLS ON
+    GO
+    
+    SET QUOTED_IDENTIFIER ON
+    GO
+    
+    CREATE TABLE [dbo].[db](
+        [db_name] [nchar](10) NULL,
+        [db_value] [nchar](10) NULL
+    ) ON [DATA]
+    GO
+    INSERT [dbo].[db] ([db_name], [db_value]) VALUES (N'db_version', N'1')
+    GO
+    "  
+    Invoke-scupPSSqlQuery -Query $query
 }
 
 #Check for required updates
-$dbVersion = (Execute-SQLiteQuery -Query "SELECT db_version FROM db").db_version
+$dbVersion = (Invoke-scupPSSqlQuery -Query "SELECT * FROM db WHERE db_name = 'db_version'").db_value
+
+$continue = $true
 Get-ChildItem -Path "$(Get-PodeState -Name "PSScriptRoot")\db\schema_updates" -Filter "*.sql" | Where-Object {
     $version = [int]$_.BaseName
     $version -gt $dbVersion
 } | ForEach-Object {
     Write-Host("Applying Database Upgrade Version $($_.BaseName)")
-    Execute-SQLiteQuery -Query ($_ | Get-Content -Raw)
-}
-
-function Check-IsNullWithSQLDBNullSupport ($Value) {
-    if ($Value -eq [System.DBNull]::Value -or $Value -eq $null) {
-        return $true
-    } else {
-        return $false
+    #Split at GO to support SSMS "GO" Statements
+    ($_ | Get-Content -Raw).Split("GO") | ForEach-Object {
+        try{
+            if($continue -and $_){
+                Invoke-scupPSSqlQuery -Query $_ -ErrorAction Stop
+            }
+        }catch{
+            $continue = $false
+            Write-Error -ErrorAction Stop -Message "Error on DB Upgrade: $_"
+        }
     }
 }

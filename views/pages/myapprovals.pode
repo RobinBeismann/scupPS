@@ -168,7 +168,7 @@ $(
         if(!$ShowApprovals -or $ShowApprovals -ne "history"){
 
             $managedRequests | ForEach-Object {
-                $app = Execute-SQLiteQuery -Query "SELECT * FROM applications WHERE app_modelname = '$($_.SMS_UserApplicationRequest.ModelName)'"
+                $app = Invoke-scupPSSqlQuery -Query "SELECT * FROM applications WHERE app_modelname = '$($_.SMS_UserApplicationRequest.ModelName)'"
                 "<tr>
                     <td scope='col'>$($_.SMS_R_User.FullUserName)</td>
                     <td scope='col'>$($_.SMS_R_User.$(Get-scupPSValue -Name "Attribute_costCenter"))</td>
@@ -188,7 +188,7 @@ $(
         }else{
             #Build history request table
             $managedRequests | ForEach-Object {
-                $app = Execute-SQLiteQuery -Query "SELECT * FROM applications WHERE app_modelname = '$($_.SMS_UserApplicationRequest.ModelName)'"
+                $app = Invoke-scupPSSqlQuery -Query "SELECT * FROM applications WHERE app_modelname = '$($_.SMS_UserApplicationRequest.ModelName)'"
                 "<tr>
                     <td scope='col'>$($_.SMS_R_User.FullUserName)</td>
                     <td scope='col'>$($_.SMS_R_User.$(Get-scupPSValue -Name "Attribute_costCenter"))</td>
@@ -280,7 +280,7 @@ $(
         '
 
         $managedRequests | ForEach-Object -Parallel {
-            $app = Execute-SQLiteQuery -Query "SELECT * FROM applications WHERE app_modelname = '$($_.SMS_UserApplicationRequest.ModelName)'"
+            $app = Invoke-scupPSSqlQuery -Query "SELECT * FROM applications WHERE app_modelname = '$($_.SMS_UserApplicationRequest.ModelName)'"
             "<tr>
                 <td scope='col'>$($app.app_title)</td>
                 <td scope='col'>$($_.SMS_UserApplicationRequest.RequestedMachine)</td>
