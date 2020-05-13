@@ -4,7 +4,9 @@ $(
 <!-- ############################################### Main ################################################# -->
 $(
     $Data.LoadedUsingPageLoader = $true
-
+    $Data.authenticatedUser = (Get-scupPSAuthUser($Data))
+    $Data.authenticatedUser = $Data.authenticatedUser
+    
     if( 
         (Get-ServerReadyness) -eq $true
     ){
@@ -18,7 +20,7 @@ $(
             !$navItem.Value.role -or
             (
                 ($role = $navItem.Value.role) -and
-                (Test-scupPSRole -Name $role -User $authenticatedUser)
+                (Test-scupPSRole -Name $role -User $Data.authenticatedUser)
             )
         ){
             if(

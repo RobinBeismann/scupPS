@@ -121,7 +121,7 @@ if(
     $(
         $tabs = @()
         
-        $ConfigVals.GetEnumerator() | Where-Object { $_.Value.Type -or $_.Value.Type -eq 0 } | ForEach-Object {
+        (Get-scupPSDefaultValues).GetEnumerator() | Where-Object { $_.Value.Type -or $_.Value.Type -eq 0 } | ForEach-Object {
             $val = Get-scupPSValue -Name $_.Name
             $val = [System.Net.WebUtility]::HtmlEncode($val)
             "

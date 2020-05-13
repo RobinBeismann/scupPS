@@ -11,7 +11,7 @@ if(
     $requestInfo = $Data.Query
     $res = $true
     if(
-        ($ConfigVals.$($requestInfo.FieldName).Type -ne 5) -and
+        ((Get-scupPSDefaultValues).$($requestInfo.FieldName).Type -ne 5) -and
         (
             !$requestInfo.FieldValue -or 
             (

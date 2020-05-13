@@ -1,4 +1,4 @@
-if($operation -eq "approvaltakeoverpreview" -or $operation -eq "approvaltakeover" -and $(Test-scupPSRole -Name "helpdesk" -User $authenticatedUser)){
+if($operation -eq "approvaltakeoverpreview" -or $operation -eq "approvaltakeover" -and $(Test-scupPSRole -Name "helpdesk" -User $Data.authenticatedUser)){
     #Request Information
     $requestorMachine = $Data.Query.submitrequestmachine
     $newMachine = $Data.Query.submitnewmachine
@@ -37,7 +37,7 @@ if($operation -eq "approvaltakeoverpreview" -or $operation -eq "approvaltakeover
                 
                 $approvalHistory = Get-CMAppApprovalHistory -requestObject $oldApproval
 
-                Send-AdminNotification -subject "[Approval Takeover] $($_.RequestedMachine)/$($_.User): $($_.Application) Approval taken over from $oldComputerName to $newComputerName by $($authenticatedUser.FullUserName)" -body "History: $($approvalHistory | ForEach-Object { "<br/>$($_.Date): $($_.Comments)" } )"
+                Send-AdminNotification -subject "[Approval Takeover] $($_.RequestedMachine)/$($_.User): $($_.Application) Approval taken over from $oldComputerName to $newComputerName by $($Data.authenticatedUser.FullUserName)" -body "History: $($approvalHistory | ForEach-Object { "<br/>$($_.Date): $($_.Comments)" } )"
                 $approvalHistory | ForEach-Object {
                     #Request does not yet exist, create it but set auto install to false
                     if(

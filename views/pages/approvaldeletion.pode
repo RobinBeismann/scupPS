@@ -84,7 +84,7 @@
 
 $(
 
-    if($(Test-scupPSRole -Name "helpdesk" -User $authenticatedUser)){
+    if($(Test-scupPSRole -Name "helpdesk" -User $Data.authenticatedUser)){
         #Get Computers
 		
 		$WhereClause = $null

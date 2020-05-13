@@ -52,7 +52,7 @@ setInterval(function(){
 </script>
 
 $(
-    if($(Test-scupPSRole -Name "helpdesk" -User $authenticatedUser)){
+    if($(Test-scupPSRole -Name "helpdesk" -User $Data.authenticatedUser)){
         #Get Computers
         $ts = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "
             SELECT 

@@ -7,7 +7,56 @@ Add-PodeSchedule -Name 'CacheCostcenters' -Cron '@hourly' -OnStart -ScriptBlock 
         $costcenters = @{}
         $attrManagedCostcenters = Get-scupPSValue -Name "Attribute_managedcostCenters"
         $attrCostcenter = Get-scupPSValue -Name "Attribute_Costcenter"
-
+        
+        $costcenterInsert = "
+            MERGE INTO 
+                [dbo].[costcenters] 
+                AS t
+            USING 
+                (
+                    SELECT 
+                        [costcenter_id] = @costcenter_id
+                ) 
+                AS s
+            ON 
+                t.costcenter_id = s.costcenter_id
+            WHEN NOT MATCHED THEN 
+                INSERT 
+                (
+                    [costcenter_id]
+                )
+                VALUES
+                (
+                    s.[costcenter_id]
+                );
+        "
+        $relationInsert =  "
+            MERGE INTO 
+                [dbo].[costcenterManagers] 
+                AS t
+            USING 
+                (
+                    SELECT 
+                        [relation_costcenter_mSID] = @relation_costcenter_mSID,
+                        [relation_costcenter_id] = @relation_costcenter_id
+                ) 
+                AS s
+            ON 
+                t.relation_costcenter_mSID = s.relation_costcenter_mSID AND
+                t.relation_costcenter_id = s.relation_costcenter_id
+            WHEN NOT MATCHED THEN 
+                INSERT 
+                (
+                    [relation_costcenter_mSID],
+                    [relation_costcenter_id]
+                )
+                VALUES
+                (
+                    s.[relation_costcenter_mSID],
+                    s.[relation_costcenter_id]
+                );  
+        " 
+        
         Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "
             SELECT 
                 $attrManagedCostcenters,
@@ -15,8 +64,15 @@ Add-PodeSchedule -Name 'CacheCostcenters' -Cron '@hourly' -OnStart -ScriptBlock 
                 SID
             FROM 
                 SMS_R_User
-        " | ForEach-Object {    
+            WHERE
+                $attrCostcenter IS NOT NULL
+            " | ForEach-Object {    
             $user = $_
+            Invoke-scupPSSqlQuery -Parameters @{
+                    "costcenter_id" = $user.$attrCostcenter
+                } -Query $costcenterInsert
+            
+    
             if(
                 ($managedCostCenters = $_.$attrManagedCostcenters) -and
                 ($managedCostCenters = $managedCostCenters.Split(";"))
@@ -29,42 +85,19 @@ Add-PodeSchedule -Name 'CacheCostcenters' -Cron '@hourly' -OnStart -ScriptBlock 
                 }
             }
         }
-
-            $costcenters.GetEnumerator() | ForEach-Object {
-                $query =  "
-                            MERGE INTO 
-                                [dbo].[costcenters] 
-                                AS t
-                            USING 
-                                (
-                                    SELECT 
-                                        costcenter_id = @costcenter_id,
-                                        costcenter_managers = @costcenter_managers
-                                ) 
-                                AS s
-                            ON 
-                                t.costcenter_id = s.costcenter_id
-                            WHEN MATCHED THEN
-                                UPDATE SET 
-                                    costcenter_id=s.costcenter_id,
-                                    costcenter_managers = s.costcenter_managers
-                            WHEN NOT MATCHED THEN 
-                                INSERT 
-                                (
-                                    costcenter_id,
-                                    costcenter_managers
-                                )
-                                VALUES
-                                (
-                                    s.costcenter_id,
-                                    s.costcenter_managers
-                                );      
-                    " 
-                Invoke-scupPSSqlQuery -Query $query -Parameters @{
-                    "costcenter_id" = $_.Name
-                    "costcenter_managers" = ($_.Value -join ";")
+        $costcenters.GetEnumerator() | ForEach-Object {
+            $costcenter = $_.Name
+                    
+            #Loop through SID and insert
+            $_.Value | Foreach-Object {
+                Invoke-scupPSSqlQuery -Query $relationInsert -Parameters @{
+                    "relation_costcenter_mSID" = $_
+                    "relation_costcenter_id" = $costcenter 
+                }
             }
         }
+        
         Write-Host("Cached $((Invoke-scupPSSqlQuery -Query "SELECT COUNT(costcenter_id) FROM costcenters;").'Column1') Costcenters..")
+        Write-Host("Cached $((Invoke-scupPSSqlQuery -Query "SELECT COUNT(relation_costcenter_mSID) FROM costcenterManagers;").'Column1') Costcenter Manager Relations..")
     }
 }

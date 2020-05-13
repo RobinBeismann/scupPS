@@ -49,7 +49,7 @@
 </script>
 
 $(
-    if($(Test-scupPSRole -Name "helpdesk" -User $authenticatedUser)){
+    if($(Test-scupPSRole -Name "helpdesk" -User $Data.authenticatedUser)){
         #Get Computers
 		$WhereClause = $null
 		$((Get-scupPSValue -Name "Collection_BrowsingAllowed").Split(";")) | ForEach-Object {

@@ -68,6 +68,9 @@ function handleRequest(requestAction,requestID,userFirstname,userLastname,userMa
 </script>
 
 $(
+    $attrCostCenter = Get-scupPSValue -Name "Attribute_costCenter"
+    $attrManagedCostCenters = Get-scupPSValue -Name "Attribute_managedcostCenters"
+
     $query = "
         SELECT
             [dbo].[applications].app_modelname AS app_modelname,
@@ -78,6 +81,9 @@ $(
             [dbo].[users].sn AS user_surname,
             [dbo].[users].mail AS user_mail,
             [dbo].[users].FullUserName AS user_displayName,
+            [dbo].[users].SID AS user_sid,
+            [dbo].[users].$attrCostCenter AS user_costcenter,
+            [dbo].[users].$attrManagedCostCenters AS user_managedcostcenters,
             [dbo].[ApplicationRequests].RequestGuid AS req_guid,
             [dbo].[ApplicationRequests].Comments AS req_comments,
             [dbo].[ApplicationRequests].CurrentState AS req_currentState,
@@ -95,12 +101,9 @@ $(
             [dbo].[applications].[app_modelname] = [dbo].[ApplicationRequests].[ModelName]
     "
 
-    $authenticatedUser = (Get-scupPSAuthUser($Data))
-    $attrCostCenter = Get-scupPSValue -Name "Attribute_costCenter"
-    $attrManagedCostCenters = Get-scupPSValue -Name "Attribute_managedcostCenters"
 
     if(
-        $authenticatedUser -and
+        $Data.authenticatedUser -and
         (Get-scupPSManagedCostCenters($Data))
     ){ 
         
@@ -115,59 +118,25 @@ $(
 
         $ShowApprovals = $Data.Query['ShowApprovals']        
         if($ShowApprovals -ne "history"){
-            $query = $query + "WHERE req_currentState = '1' and req_currentState !='2'"
+            $query = $query + "WHERE [dbo].[ApplicationRequests].CurrentState = '1' and [dbo].[ApplicationRequests].CurrentState !='2'"
         }else{        
-            $query = $query + "WHERE req_currentState != '1' and req_currentState !='2'"
+            $query = $query + "WHERE [dbo].[ApplicationRequests].CurrentState != '1' and [dbo].[ApplicationRequests].CurrentState !='2'"
         }
 
         #Get approval requests
-        $openRequests = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "
-        SELECT 
-            SMS_UserApplicationRequest.RequestedMachine,
-            SMS_UserApplicationRequest.RequestGuid,
-            SMS_UserApplicationRequest.Application,
-            SMS_UserApplicationRequest.Comments,
-            SMS_UserApplicationRequest.CurrentState,
-            SMS_UserApplicationRequest.ModelName,
-            SMS_UserApplicationRequest.User,
-            SMS_R_User.givenName,
-            SMS_R_User.sn,
-            SMS_R_User.mail,
-            SMS_R_User.SID,
-            SMS_R_User.FullUserName,
-            SMS_R_User.UserGroupName,
-            SMS_R_User.DistinguishedName,
-            SMS_R_User.$($attrManagedCostCenters),
-            SMS_R_User.$($attrCostCenter),
-            SMS_Application.LocalizedDisplayName,
-            SMS_Application.ModelName,
-            SMS_Application.CI_ID
-        FROM 
-            SMS_UserApplicationRequest
-        JOIN 
-            SMS_Application 
-        ON 
-            SMS_Application.ModelName = SMS_UserApplicationRequest.ModelName
-        JOIN 
-            SMS_R_User 
-        ON 
-            SMS_R_User.UniqueUserName = SMS_UserApplicationRequest.User
-        WHERE
-            SMS_Application.IsLatest = 1 AND
-            SMS_Application.IsSuperseded = 0
-            $queryAddition
-        "
-        $managedRequests = @()
-        #Process
-
-        $openRequests | ForEach-Object {
-            #Check if our current user is responsible for this users' costcenter
-            if(
-                (Test-ApproveCompetence -User $user.SMS_R_User -Manager $authenticatedUser)
-            ){              
-                $managedRequests += $_ 
-            }
+        if(!($isAdmin = Test-scupPSRole -Name "helpdesk" -User $Data.authenticatedUser)){
+            $query = $query + "
+                AND [dbo].[users].$attrCostCenter IN (
+                    $(
+                        ($managedCostcenters | ForEach-Object {
+                            "$_"
+                        }) -Join ","
+                    )
+                )
+            "
         }
+        $managedRequests = Invoke-scupPSSqlQuery -Query $query
+        
         
         #Build request table
         '
@@ -187,18 +156,17 @@ $(
         if(!$ShowApprovals -or $ShowApprovals -ne "history"){
 
             $managedRequests | ForEach-Object {
-                $app = Invoke-scupPSSqlQuery -Query "SELECT * FROM applications WHERE app_modelname = '$($_.SMS_UserApplicationRequest.ModelName)'"
                 "<tr>
-                    <td scope='col'>$($_.SMS_R_User.FullUserName)</td>
-                    <td scope='col'>$($_.SMS_R_User.$Attribute_costCenter)</td>
-                    <td scope='col'><a href='mailto:$($_.SMS_R_User.Mail)'>$($_.SMS_R_User.Mail)</a></td>
-                    <td scope='col'>$($app.app_title)</td>
-                    <td scope='col'>$($_.SMS_UserApplicationRequest.RequestedMachine)</td>
-                    <td scope='col'>$(Get-HTMLString($app.app_description))</td>
-                    <td scope='col'>$($_.SMS_UserApplicationRequest.Comments)</td>
+                    <td scope='col'>$($_.user_displayName)</td>
+                    <td scope='col'>$($_.user_costcenter)</td>
+                    <td scope='col'><a href='mailto:$($_.user_mail)'>$($_.user_mail)</a></td>
+                    <td scope='col'>$($_.app_title)</td>
+                    <td scope='col'>$($_.req_machine)</td>
+                    <td scope='col'>$(Get-HTMLString($_.app_description))</td>
+                    <td scope='col'>$(Get-HTMLString($_.req_comments))</td>
                     <td scope='col'>
-                        <button id='btn_approve_$($_.SMS_UserApplicationRequest.RequestGuid)' name='btn_approve' class='btn btn-primary' onclick='handleRequest(`"approverequest`",`"$($_.SMS_UserApplicationRequest.RequestGuid)`"`)'>Approve</button>
-                        <button id='btn_deny_$($_.SMS_UserApplicationRequest.RequestGuid)' name='btn_deny' class='btn btn-primary' onclick='handleRequest(`"denyrequest`",`"$($_.SMS_UserApplicationRequest.RequestGuid)`")'>Deny</button>
+                        <button id='btn_approve_$($_.req_guid)' name='btn_approve' class='btn btn-primary' onclick='handleRequest(`"approverequest`",`"$($_.req_guid)`"`)'>Approve</button>
+                        <button id='btn_deny_$($_.req_guid)' name='btn_deny' class='btn btn-primary' onclick='handleRequest(`"denyrequest`",`"$($_.req_guid)`")'>Deny</button>
                     </td>
                 </tr>
                 "
@@ -207,17 +175,16 @@ $(
         }else{
             #Build history request table
             $managedRequests | ForEach-Object {
-                $app = Invoke-scupPSSqlQuery -Query "SELECT * FROM applications WHERE app_modelname = '$($_.SMS_UserApplicationRequest.ModelName)'"
                 "<tr>
-                    <td scope='col'>$($_.SMS_R_User.FullUserName)</td>
-                    <td scope='col'>$($_.SMS_R_User.$($attrCostCenter))</td>
-                    <td scope='col'><a href='mailto:$($_.SMS_R_User.Mail)'>$($_.SMS_R_User.Mail)</a></td>
-                    <td scope='col'>$($app.app_title)</td>
-                    <td scope='col'>$($_.SMS_UserApplicationRequest.RequestedMachine)</td>
-                    <td scope='col'>$(Get-HTMLString($app.app_description))</td>
-                    <td scope='col'>$($_.SMS_UserApplicationRequest.Comments)</td>
+                    <td scope='col'>$($_.user_displayName)</td>
+                    <td scope='col'>$($_.user_costcenter)</td>
+                    <td scope='col'><a href='mailto:$($_.user_mail)'>$($_.user_mail)</a></td>
+                    <td scope='col'>$($_.app_title)</td>
+                    <td scope='col'>$($_.req_machine)</td>
+                    <td scope='col'>$(Get-HTMLString($_.app_description))</td>
+                    <td scope='col'>$(Get-HTMLString($_.req_comments))</td>
                     <td scope='col'>
-                    <button id='btn_approve_$($_.SMS_UserApplicationRequest.RequestGuid)' name='btn_approve' class='btn btn-primary' onclick='handleRequest(`"approverequest`",`"$($_.SMS_UserApplicationRequest.RequestGuid)`"`)'>Approve</button>
+                    <button id='btn_approve_$($_.req_guid)' name='btn_approve' class='btn btn-primary' onclick='handleRequest(`"approverequest`",`"$($_.req_guid)`"`)'>Approve</button>
                         
                         $(
                             #Check if this request is already approved
@@ -226,18 +193,18 @@ $(
                                 $btnAction = "revokerequest"
                                 $btnDescription = "Revoke"
                                 #Disable approve button
-                                "<script type='text/javascript'>document.getElementById('btn_approve_$($_.SMS_UserApplicationRequest.RequestGuid)').disabled = true;</script>"
+                                "<script type='text/javascript'>document.getElementById('btn_approve_$($_.req_guid)').disabled = true;</script>"
                             }else{
                                 $btnAction = "denyrequest"
                                 $btnDescription = "Deny"
                             }
                         )
-                        <button id='btn_deny_$($_.SMS_UserApplicationRequest.RequestGuid)' name='btn_deny' class='btn btn-primary' onclick='handleRequest(`"$($btnAction)`",`"$($_.SMS_UserApplicationRequest.RequestGuid)`")'>$btnDescription</button>
+                        <button id='btn_deny_$($_.req_guid)' name='btn_deny' class='btn btn-primary' onclick='handleRequest(`"$($btnAction)`",`"$($_.req_guid)`")'>$btnDescription</button>
                         
                         $(
                             #Set Deny button to disabled if request is not approved
                             if($_.SMS_UserApplicationRequest.CurrentState -ne 4){
-                                "<script type='text/javascript'>document.getElementById('btn_deny_$($_.SMS_UserApplicationRequest.RequestGuid)').disabled = true;</script>"
+                                "<script type='text/javascript'>document.getElementById('btn_deny_$($_.req_guid)').disabled = true;</script>"
                             }
                         )                
                     </td>
@@ -250,43 +217,8 @@ $(
         }
     }else{
         #Get approval requests
-        $openRequests = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "
-        SELECT 
-            SMS_UserApplicationRequest.RequestedMachine,
-            SMS_UserApplicationRequest.RequestGuid,
-            SMS_UserApplicationRequest.Application,
-            SMS_UserApplicationRequest.Comments,
-            SMS_UserApplicationRequest.CurrentState,
-            SMS_UserApplicationRequest.ModelName,
-            SMS_UserApplicationRequest.User,
-            SMS_R_User.givenName,
-            SMS_R_User.sn,
-            SMS_R_User.mail,
-            SMS_R_User.SID,
-            SMS_R_User.FullUserName,
-            SMS_R_User.UserGroupName,
-            SMS_R_User.DistinguishedName,
-            SMS_R_User.$($attrManagedCostCenters),
-            SMS_R_User.$($attrCostCenter),
-            SMS_Application.LocalizedDisplayName,
-            SMS_Application.ModelName,
-            SMS_Application.CI_ID
-        FROM 
-            SMS_UserApplicationRequest
-        JOIN 
-            SMS_Application 
-        ON 
-            SMS_Application.ModelName = SMS_UserApplicationRequest.ModelName
-        JOIN 
-            SMS_R_User 
-        ON 
-            SMS_R_User.UniqueUserName = SMS_UserApplicationRequest.User
-        WHERE
-            SMS_Application.IsLatest = 1 AND
-            SMS_Application.IsSuperseded = 0 AND
-            SMS_UserApplicationRequest.User = '$doubleBackslashUsername'
-        "        
-        
+        $query = $query + "WHERE [dbo].[users].SID = '$($Data.authenticatedUser.SID)'"
+        $openRequests = Invoke-scupPSSqlQuery -Query $query
         #Build request table
         '
         <table class="table table-responsive">
@@ -298,13 +230,12 @@ $(
             </tr>
         '
 
-        $managedRequests | ForEach-Object -Parallel {
-            $app = Invoke-scupPSSqlQuery -Query "SELECT * FROM applications WHERE app_modelname = '$($_.SMS_UserApplicationRequest.ModelName)'"
+        $openRequests | ForEach-Object {
             "<tr>
-                <td scope='col'>$($app.app_title)</td>
-                <td scope='col'>$($_.SMS_UserApplicationRequest.RequestedMachine)</td>
-                <td scope='col'>$(Get-HTMLString($app.app_description))</td>
-                <td scope='col'>$($_.SMS_UserApplicationRequest.Comments)</td>
+                <td scope='col'>$($_.app_title)</td>
+                <td scope='col'>$($_.req_machine)</td>
+                <td scope='col'>$(Get-HTMLString($_.app_description))</td>
+                <td scope='col'>$(Get-HTMLString($_.req_comments))</td>
             </tr>
             "
         }

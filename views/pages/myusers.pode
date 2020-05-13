@@ -4,23 +4,21 @@
 
 $(
     if(
-        $authenticatedUser -and
-        (Get-scupPSManagedCostCenters($Data))
+        $Data.authenticatedUser -and
+        ($managedCostCenters = Get-scupPSManagedCostCenters($Data))
     ){
-        (Get-scupPSManagedCostCenters($Data)) = (Get-scupPSManagedCostCenters($Data)).Split(";")
-
         "You are managing the cost center of:</br><br/>"
         
         #Build where clause
         $queryAddition = ""
-        (Get-scupPSManagedCostCenters($Data)) | ForEach-Object {
+        $managedCostCenters | ForEach-Object {
             if($queryAddition -eq ""){
                 $queryAddition += "AND $(Get-scupPSValue -Name "Attribute_costCenter")='$_'"
             }else{
                 $queryAddition += " or $(Get-scupPSValue -Name "Attribute_costCenter")='$_'"
             }
         }
-        if($(Test-scupPSRole -Name "helpdesk" -User $authenticatedUser)){
+        if($(Test-scupPSRole -Name "helpdesk" -User $Data.authenticatedUser)){
             $queryAddition = $null
         }
 

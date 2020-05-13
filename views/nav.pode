@@ -21,9 +21,9 @@
                 <span class="brand-text font-weight-light">
                 <a href="#" class="d-block">
                 $(
-                    $authenticatedUser = (Get-scupPSAuthUser($Data))
+                    $Data.authenticatedUser = (Get-scupPSAuthUser($Data))
                     if($Data.Auth.User.Name){
-                        if($roles = Test-scupPSRole -User $authenticatedUser){
+                        if($roles = Test-scupPSRole -User $Data.authenticatedUser){
                             "Logged in as $($Data.Auth.User.Name) (Roles: $($roles -join ", "))"
                         }else{
                             "Logged in as $($Data.Auth.User.Name)"
@@ -89,7 +89,7 @@
                 $categories = (Get-PodeState -Name "navItems").GetEnumerator() | ForEach-Object { $_.Value.Role } | Select-Object -Unique
                 $categories.GetEnumerator() | ForEach-Object {
                     $role = $_
-                    if(Test-scupPSRole -Name $role -User $authenticatedUser){
+                    if(Test-scupPSRole -Name $role -User $Data.authenticatedUser){
                         "<h6 class=`"sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted`">
                         <span>$_</span>
                         </h6>"

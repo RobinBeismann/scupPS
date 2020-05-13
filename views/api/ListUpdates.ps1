@@ -1,4 +1,4 @@
-if($operation -eq "listupdates" -and $(Test-scupPSRole -Name "helpdesk" -User $authenticatedUser)){
+if($operation -eq "listupdates" -and $(Test-scupPSRole -Name "helpdesk" -User $Data.authenticatedUser)){
     #Request Information
     $requestorMachine = $Data.Query.submitrequestmachine
 

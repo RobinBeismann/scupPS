@@ -5,6 +5,7 @@ $(
     }
     
     $operation = $Data.Query.operation
+    $Data.authenticatedUser = (Get-scupPSAuthUser($Data))
  
     #Include Includes    
     Get-ChildItem -Path "$(Get-PodeState -Name "PSScriptRoot")\views\api" -File -Include "*.ps1" -Recurse | ForEach-Object {

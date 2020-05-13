@@ -1,4 +1,4 @@
-if($operation -eq "listsoftware" -and $(Test-scupPSRole -Name "helpdesk" -User $authenticatedUser)){
+if($operation -eq "listsoftware" -and $(Test-scupPSRole -Name "helpdesk" -User $Data.authenticatedUser)){
     $requestorMachine = $Data.Query.submitrequestmachine
 
     $software = Get-CimInstance -ComputerName (Get-scupPSValue -Name "SCCM_SiteServer") -Namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -Query (

@@ -189,7 +189,7 @@ if(
             $tabs += $_
             $num = $_
             "<div class=`"tab`">$($_.Value.Description)</td>"
-            $ConfigVals.GetEnumerator() | Where-Object { $_.Value.Type -eq $num } | ForEach-Object {
+            (Get-scupPSDefaultValues).GetEnumerator() | Where-Object { $_.Value.Type -eq $num } | ForEach-Object {
                 $val = Get-scupPSValue -Name $_.Name
                 $val = [System.Net.WebUtility]::HtmlEncode($val)
                 "

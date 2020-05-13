@@ -1,4 +1,4 @@
-if($operation -eq "approvalcreationpreview" -or $operation -eq "approvalcreation" -and $(Test-scupPSRole -Name "helpdesk" -User $authenticatedUser)){
+if($operation -eq "approvalcreationpreview" -or $operation -eq "approvalcreation" -and $(Test-scupPSRole -Name "helpdesk" -User $Data.authenticatedUser)){
     #Request Information
     $requestorMachineName = $Data.Query.submitrequestmachine
     $requestorUser = $Data.Query.submitrequestuser
@@ -22,8 +22,8 @@ if($operation -eq "approvalcreationpreview" -or $operation -eq "approvalcreation
         }
         
         if($operation -eq "approvalcreation"){
-            $approverFirstname = $authenticatedUser.givenName
-            $approverLastname = $authenticatedUser.sn
+            $approverFirstname = $Data.authenticatedUser.givenName
+            $approverLastname = $Data.authenticatedUser.sn
             $approverDisplayNameV1 = "$approverLastname, $approverFirstname" 
             $comment = "Pre-approved by $($approverDisplayNameV1)."
             

@@ -4,16 +4,14 @@
 
 $(
     if(
-        $authenticatedUser -and
-        (Get-scupPSManagedCostCenters($Data))
+        $Data.authenticatedUser -and
+        ($managedCostCenters = Get-scupPSManagedCostCenters($Data))
     ){
-        (Get-scupPSManagedCostCenters($Data)) = (Get-scupPSManagedCostCenters($Data)).Split(";")
-
         "You're a manager of the following costcenters:<br/><br/>"
-        if($(Test-scupPSRole -Name "helpdesk" -User $authenticatedUser)){
+        if($(Test-scupPSRole -Name "helpdesk" -User $Data.authenticatedUser)){
             "You're admin and can thus manage all costcenters."
         }else{
-            (Get-scupPSManagedCostCenters($Data)) -join "<br>"
+            $managedCostCenters -join "<br>"
         }
     }else{
         "You don't have any costcenters to manage."

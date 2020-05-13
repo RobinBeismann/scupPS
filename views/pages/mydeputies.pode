@@ -4,69 +4,57 @@
 
 $(
     if(
-        $authenticatedUser -and
-        (Get-scupPSManagedCostCenters($Data))
+        $Data.authenticatedUser -and
+        (
+            ($isAdmin = Test-scupPSRole -Name "helpdesk" -User $Data.authenticatedUser) -or
+            ($managedCostCenters = Get-scupPSManagedCostCenters($Data) )
+        )
     ){
-
-        #Search costcenter managers
-        $managersPerCostCenter = @{}
-        #Get all users with the managedCostcenterAttribute
-        Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "select * from sms_r_user where $(Get-scupPSValue -Name "Attribute_managedcostCenters") IS NOT NULL" | Where-Object { 
-            $_.$(Get-scupPSValue -Name "Attribute_managedcostCenters") -and ($_.$(Get-scupPSValue -Name "Attribute_managedcostCenters") -ne "") -and ($_.$(Get-scupPSValue -Name "Attribute_managedcostCenters") -ne "admin")
-        } | ForEach-Object {
-            #Save the user to be used in the next loop
-            $user = $_
-
-            #Loop through the costcenters
-            $_.$(Get-scupPSValue -Name "Attribute_managedcostCenters").Split(";") | ForEach-Object {
-                #Initialize nested array if not done already
-                if(!($managersPerCostCenter[$_])){
-                    $managersPerCostCenter[$_] = @()
-                }
-
-                #Check if the manager has a mail and add him to the manager array
-                if($user.mail -and $user.mail -ne ""){
-                    Write-Host("Added Costcenter Manager $($user.FullUsername) for $_")
-                    $managersPerCostCenter[$_] += $user.FullUserName          
-                }else{
-                    Write-Host("Not adding Costcenter Manager $($user.FullUsername) for $userCostcenter as he doesn't have a mail address")
-                }
-            }
+        $queryAddition = $null
+        if(!$isAdmin){
+            $queryAddition = "
+                WHERE [dbo].[costcenters].[costcenter_id] IN (
+                    $(
+                        ($managedCostcenters | ForEach-Object {
+                            "'$_'"
+                        }) -Join ","
+                    )
+                )
+            "
+        }else{            
+            "You're admin and can thus manage all costcenters.<br/><br/>"
         }
-
-        #Split them
-        (Get-scupPSManagedCostCenters($Data)) = (Get-scupPSManagedCostCenters($Data)).Split(";")
-
+         
+        $query = "
+        SELECT
+            [dbo].[costcenters].[costcenter_id] AS Costcenter,
+            [dbo].[users].[FullUserName] AS DisplayName
+        FROM
+            [dbo].[costcenterManagers]
+        INNER JOIN
+            [dbo].[costcenters]
+        ON
+            [dbo].[costcenterManagers].[relation_costcenter_id] = [dbo].[costcenters].costcenter_id
+        INNER JOIN
+            [dbo].[users]
+        ON
+            [dbo].[users].[SID] = [dbo].[costcenterManagers].[relation_costcenter_mSID]
+        
+        $queryAddition
+        ORDER BY
+            [dbo].[costcenters].[costcenter_id]
+        "
+        
         #Initial text
         "The following managers can also approve requests for your costcenters:<br/><br/>"
 
-        #Remind the Admins
-        if($(Test-scupPSRole -Name "helpdesk" -User $authenticatedUser)){
-            "You're admin and can thus manage all costcenters.<br/><br/>"
-        }
-
-        #User is admin -> show all costcenters
-        if($(Test-scupPSRole -Name "helpdesk" -User $authenticatedUser)){
-            $usermanagedCostcenters = $managersPerCostCenter
-        #User is not admin -> show his costcenters
-        }else{
-            $usermanagedCostcenters = @()
-            $managersPerCostCenter.GetEnumerator() | ForEach-Object {
-                #Check if the user manages this costcenter
-                if($_.Name -in ($authenticatedUser.$(Get-scupPSValue -Name "Attribute_managedcostCenters")).Split(";")){
-                    $usermanagedCostcenters += $_
-                }
-            }
-        }
-        
-        $usermanagedCostcenters.GetEnumerator() | ForEach-Object {
-            "<b>Costcenter $($_.Key):</b>"
-            $_.Value | ForEach-Object {
-                "<br/>";$_
+        Invoke-scupPSSqlQuery -Query $query | Group-Object -Property "Costcenter" | ForEach-Object {
+            "<b>Costcenter $($_.Name.Trim()):</b>"
+            $_.Group | Foreach-Object {
+                "<br/>";$_.DisplayName
             }
             "<br/><br/>"
         }
-
     }else{
         "You don't have any costcenters to manage."
     }

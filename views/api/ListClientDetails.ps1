@@ -1,4 +1,3 @@
-
 function Generate-Table($arr){
     
     #Table header
@@ -33,7 +32,7 @@ function Generate-Table($arr){
     '</table><br/>'
 }
 
-if($operation -eq "listclientdetails" -and $(Test-scupPSRole -Name "helpdesk" -User $authenticatedUser)){
+if($operation -eq "listclientdetails" -and $(Test-scupPSRole -Name "helpdesk" -User $Data.authenticatedUser)){
     #Request Information
     if(!$requestorMachine){
         $requestorMachine = $Data.Query.submitrequestmachine

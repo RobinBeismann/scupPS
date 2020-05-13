@@ -13,7 +13,7 @@ if(
 
     $reqObj = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "Select * From SMS_UserApplicationRequest where RequestGUID='$requestID'" | Get-CimInstance
     $reqObjRequestor = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "Select * From SMS_R_USER where Sid='$($reqObj.UserSid)'"
-    $reqObjApprover = $authenticatedUser
+    $reqObjApprover = $Data.authenticatedUser
     $reqObjOO = [wmi]"\\$(Get-scupPSValue -Name "SCCM_SiteServer")\$((Get-scupPSValue -Name "SCCM_SiteNamespace")):SMS_UserApplicationRequest.RequestGuid=`"$requestId`"" #Object for object oriented calls
     
     #Check if requestor has the competence to approve requests for this costcenter
@@ -47,6 +47,7 @@ if(
             "Approved $softwareTitle for $requestorDisplayNameV1, starting installation on $requestorMachine"
             try{
                 $result = $reqObjOO.Approve("Approved by $approverDisplayNameV1")
+                Invoke-scupPSAppRequestCaching -RequestGuid $requestID
             }catch{
                 $_
             }
@@ -63,6 +64,7 @@ if(
 
             try{
                 $result = $reqObjOO.Deny("Denied by $approverDisplayNameV1 with the Reason `"$denyreason`"")
+                Invoke-scupPSAppRequestCaching -RequestGuid $requestID
             }catch{
                 $_
             }
@@ -79,10 +81,10 @@ if(
 
             try{
                 $result = $reqObjOO.Deny("Revoked by $approverDisplayNameV1 with the Reason `"$denyreason`"")
+                Invoke-scupPSAppRequestCaching -RequestGuid $requestID
             }catch{
                 $_
             }
-
             $mailTemplate = "revoke.mailtemplate.html"
             $mailSubject = "Application Approval revoked"   
         }else{
