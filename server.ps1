@@ -4,13 +4,16 @@ try{
     Write-Host("Loaded local Pode module.")
 }catch{
     #Fail back to the system module
-    Install-Module -Scope CurrentUser -Name 'Pode' -Confirm:$false -Force
+    if(!(Get-Module -Name 'Pode' -ListAvailable)){
+        Install-Module -Scope CurrentUser -Name 'Pode' -Confirm:$false -Force
+    }
     Import-Module -Name "Pode"
     Write-Host("Loaded system Pode module.")
 }
 #Install MSSQL Module
-Install-Module -Scope CurrentUser -Name 'Sqlserver' -Confirm:$false -Force
-
+if(!(Get-Module -Name 'Sqlserver' -ListAvailable)){
+    Install-Module -Scope CurrentUser -Name 'Sqlserver' -Confirm:$false -Force
+}
 
 Start-PodeServer -Threads (Get-CimInstance -ClassName "Win32_Processor" | Select-Object -ExpandProperty NumberOfLogicalProcessors) -ScriptBlock {
     Add-PodeEndpoint -Address 127.0.0.1 -Protocol Http
@@ -40,8 +43,16 @@ Start-PodeServer -Threads (Get-CimInstance -ClassName "Win32_Processor" | Select
     }
 
     #Load SQL Module
-    Import-PodeModule -Name 'SqlServer'
-    
+    Import-PodeModule -Path './ps_modules/Invoke-SqlCmd2/Invoke-SqlCmd2.psm1' -Now
+    #Load scupPS Module
+    Import-PodeModule -Path './ps_modules/scupPS/scupPS.psm1' -Now
+    #Set SQL Parameters
+    Set-PodeState -Name "sqlInstance" -Value ""    
+    Set-PodeState -Name "sqlDB" -Value ""
+    Write-Host("DB Version: " + (Invoke-scupPSSqlQuery -Query "SELECT * FROM db WHERE db_name = 'db_version'").db_value)
+    #Upgrade Database
+    Use-PodeScript -Path "$(Get-PodeState -Name "PSScriptRoot")\views\includes\databaseupgrade.ps1"
+        
     #Authentication 
     Enable-PodeSessionMiddleware -Secret (Get-PodeState -Name "sessionSecret") -Duration 120 -Extend
     
