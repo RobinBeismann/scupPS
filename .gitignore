@@ -8,3 +8,4 @@ logs/*
 states.json
 db/db.sqlite
 pode/*
+public/temp/*.png
