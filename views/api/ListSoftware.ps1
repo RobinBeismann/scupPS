@@ -1,17 +1,24 @@
 if($operation -eq "listsoftware" -and $(Test-scupPSRole -Name "helpdesk" -User $Data.authenticatedUser)){
     $requestorMachine = $Data.Query.submitrequestmachine
 
-    $software = Get-CimInstance -ComputerName (Get-scupPSValue -Name "SCCM_SiteServer") -Namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -Query (
-    "SELECT 
-        InstalledLocation,ProductVersion,ProductName
-    FROM
-        SMS_R_System
-    JOIN 
-        SMS_G_SYSTEM_Installed_Software on SMS_R_System.ResourceID = SMS_G_SYSTEM_Installed_Software.ResourceID
-    WHERE
-        SMS_R_SYSTEM.Name= ""$($requestorMachine)"" ") |
-    Select-Object -Property ProductName, ProductVersion, InstalledLocation | 
-    Sort-Object ProductName
+    $query = Invoke-scupCCMSqlQuery -Query "
+        SELECT 
+            systems.Name0				AS machine_name,
+            software.Publisher0			AS app_publisher,
+            software.ProductName0		AS app_title,
+            software.ProductVersion0	AS app_version,
+            software.InstalledLocation0	AS app_installlocation,
+            software.InstallDate0		AS app_installdate
+        FROM
+            [dbo].[v_R_System] as systems
+        JOIN 
+            v_GS_INSTALLED_SOFTWARE AS software
+                ON systems.ResourceID = software.ResourceID
+        WHERE
+            systems.Name0 = @machine
+        ORDER BY
+            software.Publisher0,software.ProductName0,software.ProductVersion0
+    " -Parameters @{ Machine = $requestorMachine }
 
     #Table header
     '<style type="text/css">
@@ -22,6 +29,7 @@ if($operation -eq "listsoftware" -and $(Test-scupPSRole -Name "helpdesk" -User $
     </style>
     <table class="table table-responsive">
     <tr>
+    <th>Publisher</th>
     <th>Software</th>
     <th>Version</th>
     <th>Install Location</th>
@@ -29,11 +37,12 @@ if($operation -eq "listsoftware" -and $(Test-scupPSRole -Name "helpdesk" -User $
     '
 
     #Fill table
-    $software | ForEach-Object {
+    $query | ForEach-Object {
         "<tr>
-            <td scope='col'>$($_.ProductName)</td>
-            <td scope='col'>$($_.ProductVersion)</td>
-            <td scope='col'>$($_.InstalledLocation)</a></td>
+            <td scope='col'>$($_.app_publisher)</td>
+            <td scope='col'>$($_.app_title)</td>
+            <td scope='col'>$($_.app_version)</td>
+            <td scope='col'>$($_.app_installlocation)</a></td>
         </tr>"
     }
 

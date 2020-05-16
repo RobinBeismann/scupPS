@@ -15,22 +15,14 @@ if(
     Write-Host("Creating 'db' table..")
     #Create DB Version Table
     $query = "
-    DROP TABLE IF EXISTS [dbo].[db]
-    GO
-    
-    SET ANSI_NULLS ON
-    GO
-    
-    SET QUOTED_IDENTIFIER ON
-    GO
+    DROP TABLE IF EXISTS [dbo].[db];
     
     CREATE TABLE [dbo].[db](
         [db_name] [nchar](10) NULL,
         [db_value] [nchar](10) NULL
-    ) ON [DATA]
-    GO
+    );
+
     INSERT [dbo].[db] ([db_name], [db_value]) VALUES (N'db_version', N'1')
-    GO
     "  
     Invoke-scupPSSqlQuery -Query $query
 }

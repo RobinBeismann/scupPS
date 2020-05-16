@@ -1,101 +1,89 @@
-function Generate-Table($arr){
-    
-    #Table header
-    '<style type="text/css">
-    .tg  {border-collapse:collapse;border-spacing:0;}
-    .tg td{font-family:Arial, sans-serif;font-size:14px;padding:10px 5px;border-style:solid;border-width:1px;overflow:hidden;word-break:normal;border-color:black;}
-    .tg th{font-family:Arial, sans-serif;font-size:14px;font-weight:normal;padding:10px 5px;border-style:solid;border-width:1px;overflow:hidden;word-break:normal;border-color:black;}
-    .tg .tg-0lax{text-align:left;vertical-align:top}
-    </style>
-        
-    <table class="table table-responsive">
-    <tr>
-    <th>Name</th>
-    <th>Value</th>
-    </tr>
-    '
-
-    $arr.GetEnumerator() | ForEach-Object {
-        "<tr>
-            <td scope='col'>$($_.Name)</td>
-            <td scope='col'>$(
-                if($_.Value -is [hashtable]){
-                    Generate-Table($_.Value)
-                }else{
-                    $_.Value
-                }
-            )</td>
-        </tr>"
-    }
-
-    #End Table    
-    '</table><br/>'
-}
-
 if($operation -eq "listclientdetails" -and $(Test-scupPSRole -Name "helpdesk" -User $Data.authenticatedUser)){
     #Request Information
     if(!$requestorMachine){
         $requestorMachine = $Data.Query.submitrequestmachine
     }
 
-    $PCInfo = Get-CimInstance -ComputerName (Get-scupPSValue -Name "SCCM_SiteServer") -Namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -Query (
-    "SELECT 
+    $query = Invoke-scupCCMSqlQuery -Query "
+    SELECT 
         *
     FROM
-        SMS_R_System
+        [dbo].[v_R_System] as [system]
     INNER JOIN 
-        SMS_G_System_Computer_System_Product on SMS_R_System.ResourceID = SMS_G_System_Computer_System_Product.ResourceID
+        v_GS_COMPUTER_SYSTEM_PRODUCT AS [system_product] 
+        ON 
+            [system].ResourceID = system_product.ResourceID
     INNER JOIN 
-        SMS_G_System_Computer_System on SMS_R_System.ResourceID = SMS_G_System_Computer_System.ResourceID
+        v_GS_COMPUTER_SYSTEM AS [computer_system]
+        ON
+            [system].ResourceID = [computer_system].ResourceID
     INNER JOIN 
-        SMS_G_System_CH_ClientSummary on SMS_R_System.ResourceID = SMS_G_System_CH_ClientSummary.ResourceID
-    INNER JOIN 
-        SMS_G_System_DISK on SMS_R_System.ResourceID = SMS_G_System_DISK.ResourceID
+        v_CH_ClientSummary AS [clientsummary]
+        ON
+            [system].ResourceID = [clientsummary].ResourceID
     WHERE
-        SMS_R_SYSTEM.Name= '$requestorMachine'
-    ")
-
-    $ClientSum = $PCInfo.SMS_G_System_CH_ClientSummary | Select-Object -First 1
-    $ClientSystem = $PCInfo.SMS_G_System_Computer_System | Select-Object -First 1
-    $ClientProduct = $PCInfo.SMS_G_System_Computer_System_Product
-
+        [system].Name0 = @Machine
+    " -Parameters @{ Machine = $requestorMachine }
+    
+    
     #Build basic data array
     $dataArr = [ordered]@{
         "Computer Details" = [ordered]@{
-            Manufacturer = $ClientSystem.Manufacturer
-            Model = $ClientSystem.Model
-            SerialNumber = ($ClientProduct.IdentifyingNumber | Select-Object -First 1)
-            Name = $ClientSystem.Name
-            Domain = $ClientSystem.Domain
-            Memory = "$([math]::Round($ClientSystem.TotalPhysicalMemory/1024/1024))GB"
+            "Manufacturer" = $query.Manufacturer0
+            "Model" = $query.Model0
+            "SerialNumber" = $query.IdentifyingNumber0
+            "Name" = $query.Name0
+            "Domain" = $query.Domain0
+            "CPU Count" = $query.NumberOfProcessors0
+            "Memory" = "$([math]::Round($query.TotalPhysicalMemory0/1024/1024))GB"
+            "Extended Security Updates Key" = $query.ESUValue
+            "Windows Build" = $query.BuildExt
         }
-
+    
         "Disks" = @{}
+    
+        "AD Details" = [ordered]@{
+            "Last AD Logon Date" = $query.Last_Logon_Timestamp0 | Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+            "Distinguished Name" = $query.Distinguished_Name0
+            "Azure AD Device ID" = $query.AADDeviceID
+            "Azure AD Tenant ID" = $query.AADTenantID
+        }
 
         "Config Manager Details" = [ordered]@{
-            "Last AD Logon (might not be accurate)" = $clientSum.ADLastLogonTime | Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-            "Last active time" = $clientSum.LastActiveTime | Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-            "Last policy request" = $clientSum.LastPolicyRequest | Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+            "Last Hardware Inventory" = $query.LastHW | Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+            "Last active time" = $query.LastOnline | Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+            "Last policy request" = $query.LastPolicyRequest | Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+            "Last management point" = $query.LastMPServerName
+            "Expected next reporting" = $query.ExpectedNextPolicyRequest | Get-Date -Format "yyyy-MM-dd HH:mm:ss"
         }
-
+    
     }
-
-    #Fill the array with some infos (disks)
-    $PCInfo.SMS_G_System_DISK | ForEach-Object {
-        $dataArr.'Disks'.$($_.Index) += @{
-            DiskID = $_.Index
-            Model = $_.Model
-            Size = "$([math]::Round($_.Size/1024))GB"
+    
+    Invoke-scupCCMSqlQuery -Query "
+    SELECT 
+        *
+    FROM
+        v_GS_DISK AS disks
+    LEFT JOIN 
+        [dbo].[v_R_System] as [system]
+        ON
+            [system].ResourceID = disks.ResourceID
+    WHERE
+        [system].Name0 = '$requestorMachine'
+    " | Foreach-Object {
+        $dataArr.'Disks'.$($_.Index0) += @{
+            DiskID = $_.Index0
+            Model = $_.Model0
+            Size = "$([math]::Round($_.Size0/1024))GB"
         }
     }
-
     #Build the tables
     $dataArr.Keys | ForEach-Object {
         Write-Host("Processing $_")
         "<legend>$_</legend>"
         $data = $dataArr.$_
-
-        Generate-Table($data)  
+    
+        Get-GeneratedTable($data)  
     }
 
 }

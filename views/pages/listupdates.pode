@@ -1,17 +1,5 @@
 <!-- Item Name: 'List Updates' Item Role: 'helpdesk' -->
 
-<!-- ############################################### Includes ############################################# -->
-$( 
-    #Include Config
-    . "$(Get-PodeState -Name "PSScriptRoot")\views\includes\core\config.ps1"
-    . "$(Get-PodeState -Name "PSScriptRoot")\views\includes\core\userLib.ps1"
-    
-    #Include Includes    
-    Get-ChildItem -Path "$(Get-PodeState -Name "PSScriptRoot")\views\includes\lib" -File -Include "*.ps1" -Recurse | ForEach-Object {
-        "<!-- Including: $($_.FullName) -->"
-        . $_.FullName
-    }
-)
 <!-- ############################################### Code ################################################# -->
 
 
@@ -67,32 +55,35 @@ $(
 
 if($(Test-scupPSRole -Name "helpdesk" -User $Data.authenticatedUser)){
     #Get Computers
-	$WhereClause = $null
-	$((Get-scupPSValue -Name "Collection_BrowsingAllowed").Split(";")) | ForEach-Object {
-		if(!$WhereClause){
-			$WhereClause = "SMS_Collection.name LIKE `'$_`'"
-		}else{
-			$WhereClause += " OR SMS_Collection.name LIKE `'$_`'"
-		}
-	}
-	
-    $computers = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "
-    SELECT 
-        SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client 
-    FROM SMS_R_System where ResourceID in 
-        (
-            SELECT 
-                ResourceID
-            FROM 
-                SMS_FullCollectionMembership 
-            JOIN 
-                SMS_Collection 
-            ON 
-                SMS_FullCollectionMembership.CollectionID = SMS_Collection.CollectionID 
-            WHERE
-                $WhereClause
-         )
-    " | Sort-Object -Property Name
+    $computers = Invoke-scupCCMSqlQuery -Query "
+        SELECT 
+            [systems].[ResourceID] ,
+            [systems].[ResourceType],
+            [systems].[Name0] AS Name,
+            [systems].[SMS_Unique_Identifier0],
+            [systems].[Resource_Domain_OR_Workgr0],
+            [systems].[Client0]
+        FROM 
+            [dbo].[v_R_System] as systems
+        WHERE 
+            ResourceID in 
+                (
+                    SELECT
+                        membership.ResourceID
+                    FROM
+                        [dbo].[v_FullCollectionMembership] AS membership
+                    LEFT JOIN
+                        [dbo].[v_Collections] AS collections
+                    ON
+                        [collections].[SiteID] = [membership].CollectionID
+                    WHERE
+                        collections.CollectionName IN (@collections)
+                )
+        AND [systems].[Client0] IS NOT NULL
+    " -Parameters @{
+        collections = (Get-scupPSValue -Name "Collection_BrowsingAllowed")
+    } | Sort-Object -Property Name
+
 
     #Build Fields
     @"

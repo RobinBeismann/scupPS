@@ -58,6 +58,13 @@ input.invalid {
 </style>
 
 <script type="text/javascript">
+    var typewatch = function(){
+        var timer = 0;
+        return function(callback, ms){
+            clearTimeout (timer);
+            timer = setTimeout(callback, ms);
+        }  
+    }();
 
     var url = '/api';
     var currentTab = 0; // Current tab is set to be the first tab (0)
@@ -91,14 +98,23 @@ input.invalid {
         var value = document.getElementById(fieldName).value;
         var suburl = (url + '?operation=setup&fieldName=' + encodeURIComponent(fieldName) + '&fieldValue=' + encodeURIComponent(value));       
         var client = new HttpClient();
+        var field = document.getElementById(fieldName);
+        field.style.backgroundColor = "#ADADAD";
+        field.disabled = true;
                         
         client.get( suburl, function(response) {
                 if(!response || !response.includes("True")){      
-                    document.getElementById(fieldName).ready = false;
-                    document.getElementById(fieldName).className = " invalid";
+                    console.log("Value " + fieldName + " is not yet ready, response from Api is: '" + response + "'");
+                    var field = document.getElementById(fieldName);
+                    field.ready = false;
+                    field.style.backgroundColor = "yellow";
+                    field.disabled = false;
                 }else{
-                    document.getElementById(fieldName).ready = true;
-                    document.getElementById(fieldName).className = "";
+                    console.log("Value " + fieldName + " is ready, response from Api is: '" + response + "'");
+                    var field = document.getElementById(fieldName);
+                    field.ready = true;
+                    field.style.backgroundColor = "#09B000";
+                    field.disabled = false;
                 }           
         });
     }
@@ -128,7 +144,9 @@ if(
                 <p>$($_.Value.Description):<input id=`"$($_.Name)`" value=`"$($val)`"oninput=`"this.className = ''`"></p>
                 <script type=`"text/javascript`">
                     `$(`"#$($_.Name)`").keyup(function(){
-                        verify(`"$($_.Name)`");
+                        typewatch(function(){
+                            verify(`"$($_.Name)`");
+                        }, 1000 );                            
                     });
                 </script>
             "

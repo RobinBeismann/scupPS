@@ -47,7 +47,7 @@ $(
         
         #Initial text
         "The following managers can also approve requests for your costcenters:<br/><br/>"
-
+        
         Invoke-scupPSSqlQuery -Query $query | Group-Object -Property "Costcenter" | ForEach-Object {
             "<b>Costcenter $($_.Name.Trim()):</b>"
             $_.Group | Foreach-Object {

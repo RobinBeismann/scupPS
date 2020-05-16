@@ -115,3 +115,66 @@ function Invoke-scupPSAppRequestCaching($RequestGuid){
         }
     }
 }
+
+function Get-IconUrl($CI_ID,$Hash){
+    if(
+        !$CI_ID -or
+        $CI_ID -is [System.DBNull] -or
+        !$Hash -or
+        $Hash -is [System.DBNull]
+    ){
+        return $false
+    }
+
+    $rootPath = (Get-PodeState -Name "PSScriptRoot")
+    $tempFolder =  "temp"
+    $tempPath = "$rootPath\public\$tempFolder"
+    #Create Temp Folder if required
+    if(!(Test-Path -Path $tempPath -ErrorAction SilentlyContinue)){
+        try{
+            New-Item -Path $rootPath -Name $tempFolder -ItemType Directory -Confirm:$false -Force
+        }catch{
+            Write-Host("Error - unable to create $tempPath as temp directory as the account running Pode does not have enough rights, please create it manually!")
+        }
+    }
+
+    #Write file to binary if not existent
+    if(!(Test-Path -Path $ItemPath -ErrorAction SilentlyContinue)){            
+        $ItemPath = "$tempPath\$Hash.png"
+        $relativeItemPath = "$tempFolder\$Hash.png"
+
+        if(
+            #Check if Icon is already saved
+            !(Test-Path -Path $ItemPath -ErrorAction SilentlyContinue)
+        ){
+            #Item is not saved
+            if(
+                #Check if we can retrieve this app
+                ($app = Invoke-scupCCMSqlQuery -Query "
+                SELECT 
+                    [localizedproperties].[Icon] AS app_icon,
+                    [localizedproperties].[CI_ID] as app_CI_ID
+                FROM
+                    fn_localizedappproperties(1033) AS localizedproperties
+                WHERE
+                    [localizedproperties].[Icon] IS NOT NULL AND
+                    [localizedproperties].[CI_ID] = '$CI_ID'
+                ") -and
+                #Check if this app has an icon
+                ($icon = $app.app_icon)
+            ){
+                #Write it to the file system
+                [io.file]::WriteAllBytes($ItemPath, $icon)
+            }else{
+                #No icon found -> return null
+                return $false
+            }
+        }
+
+        #Return Path
+        return $relativeItemPath    
+    }
+
+    #Return False as Catchall
+    return $false        
+}

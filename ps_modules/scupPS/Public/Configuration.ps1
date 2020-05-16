@@ -18,6 +18,16 @@ function Get-scupPSDefaultValues(){
             Description = "[Required] SCCM Site Code (3 Letters)"
             Type = 0
         }
+        "SCCM_SiteDatabaseInstance" = @{
+            DefaultValue = "<Name of Site Server Database Instance>"
+            Description = "[Required] SCCM Site Database Instance"
+            Type = 0
+        }
+        "SCCM_SiteDatabaseName" = @{
+            DefaultValue = "<Name of Site Server Database>"
+            Description = "[Required] SCCM Site Database Name"
+            Type = 0
+        }
         "scupPSAdminGroup" = @{
             DefaultValue = "<CONTOSO\GroupName>"
             Description = "[Required] scupPS Admin Group"
@@ -152,5 +162,5 @@ function Set-scupPSValue($Name,$Value){
                 )
         "
     }
-    Set-PodeState -Name "ConfigCache" -Value @{}
+    $null = Set-PodeState -Name "ConfigCache" -Value @{}
 }

@@ -112,7 +112,7 @@ function Send-AdminNotification(){
 }
 
 function Get-HTMLString($Value){
-    if(!$Value){
+    if(!$Value -or $Value -is [System.DBNull]){
         $Value = ""
     }
     $Value = $Value.Replace("&","&amp;")
@@ -148,4 +148,38 @@ function Test-ADCredential {
 
 function Get-UserBySid($sid){
     return ([adsisearcher]"(&(objectClass=person)(objectClass=user)(|(objectSid=$sid)(msExchMasterAccountSid=$sid)))").FindAll().properties
+}
+
+function Get-GeneratedTable($arr){
+    
+    #Table header
+    '<style type="text/css">
+    .tg  {border-collapse:collapse;border-spacing:0;}
+    .tg td{font-family:Arial, sans-serif;font-size:14px;padding:10px 5px;border-style:solid;border-width:1px;overflow:hidden;word-break:normal;border-color:black;}
+    .tg th{font-family:Arial, sans-serif;font-size:14px;font-weight:normal;padding:10px 5px;border-style:solid;border-width:1px;overflow:hidden;word-break:normal;border-color:black;}
+    .tg .tg-0lax{text-align:left;vertical-align:top}
+    </style>
+        
+    <table class="table table-responsive">
+    <tr>
+    <th>Name</th>
+    <th>Value</th>
+    </tr>
+    '
+
+    $arr.GetEnumerator() | ForEach-Object {
+        "<tr>
+            <td scope='col'>$($_.Name)</td>
+            <td scope='col'>$(
+                if($_.Value -is [hashtable]){
+                    Get-GeneratedTable($_.Value)
+                }else{
+                    $_.Value
+                }
+            )</td>
+        </tr>"
+    }
+
+    #End Table    
+    '</table><br/>'
 }

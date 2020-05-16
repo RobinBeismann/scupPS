@@ -1,14 +1,12 @@
-#Request Information
 if($operation -eq "approvalclearpreview" -or $operation -eq "approvalclear" -and $(Test-scupPSRole -Name "helpdesk" -User $Data.authenticatedUser)){
-    Write-Host("Receiving application approvals for $requestorMachine")
-    $oldApprovals = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "Select * From SMS_UserApplicationRequest where RequestedMachine='$requestorMachine'"
     $requestorMachine = $Data.Query.submitrequestmachine
     $reason = $Data.Query.submitdeletereason
+    Write-Host("Receiving application approvals for $requestorMachine")
+    $oldApprovals = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "Select * From SMS_UserApplicationRequest where RequestedMachine='$requestorMachine'"
 
     if(
         $oldApprovals     
     ){
-        $step = 1
         Write-Host("Found old Applications ($($oldApprovals.Application -join ", "))")
         $oldApprovals | ForEach-Object {
             #Check for the action

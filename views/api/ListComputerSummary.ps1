@@ -1,35 +1,26 @@
-#Request Information
 if($operation -eq "listcomputersummary" -and $(Test-scupPSRole -Name "helpdesk" -User $Data.authenticatedUser) -and ($collection = $Data.Query.submitcollection) -and ($collection -in $((Get-scupPSValue -Name "Collection_BrowsingAllowed").Split(";")))){
     
     #Get Computers
-    $wmiComputers = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "
+    $query = Invoke-scupCCMSqlQuery -Query "
     SELECT
-         SMS_G_System_Computer_System.Model,SMS_G_System_Computer_System.Manufacturer
-    FROM SMS_R_System
-
-    INNER JOIN 
-        SMS_G_System_Computer_System
-    ON 
-        SMS_R_System.ResourceID = SMS_G_System_Computer_System.ResourceID
-      
-    WHERE ResourceID in 
-        (
-            SELECT 
-                ResourceID
-            FROM 
-                SMS_FullCollectionMembership 
-            JOIN 
-                SMS_Collection 
-            ON 
-                SMS_FullCollectionMembership.CollectionID = SMS_Collection.CollectionID 
-            WHERE
-                SMS_Collection.name LIKE `'$collection`'
-         )
+        COUNT([computer_system].Model0) AS [amount],
+        CONCAT([computer_system].Manufacturer0,' - ', [computer_system].Model0) AS model
+    FROM
+        v_GS_COMPUTER_SYSTEM AS [computer_system]
+    WHERE  [computer_system].resourceid IN (
+                                SELECT 
+                                    membership.resourceid 
+                                FROM   
+                                    [dbo].[v_fullcollectionmembership] AS membership 
+                                LEFT JOIN 
+                                    [dbo].[v_collections] AS collections 
+                                        ON [collections].[siteid] = [membership].collectionid 
+                                WHERE  collections.collectionname LIKE @Collection) 
+    GROUP BY
+        (CONCAT([computer_system].Manufacturer0,' - ', [computer_system].Model0))
     ORDER BY
-        SMS_R_System.Name
-    "
-
-    $wmiComputers = $wmiComputers | ForEach-Object { "$($_.Manufacturer) - $($_.Model)" } | Group-Object | Sort-Object -Property Count -Descending
+        COUNT([computer_system].Model0)
+    " -Parameters @{ Collection = $collection }
 
     #Table header
     '
@@ -49,10 +40,10 @@ if($operation -eq "listcomputersummary" -and $(Test-scupPSRole -Name "helpdesk" 
     '
 
     #Fill table
-    $wmiComputers | ForEach-Object {
+    $query | ForEach-Object {
         "<tr>
-            <td scope='col'>$($_.Name)</td>
-            <td scope='col'>$($_.Count)</td>
+            <td scope='col'>$($_.model)</td>
+            <td scope='col'>$($_.amount)</td>
         </tr>"
     }
 

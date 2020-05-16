@@ -2,29 +2,25 @@ if($operation -eq "listupdates" -and $(Test-scupPSRole -Name "helpdesk" -User $D
     #Request Information
     $requestorMachine = $Data.Query.submitrequestmachine
 
-    $updates = Get-CimInstance -ComputerName (Get-scupPSValue -Name "SCCM_SiteServer") -Namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -Query ("
+    $query = Invoke-scupCCMSqlQuery -Query "
         SELECT 
-            SMS_R_System.Name,SMS_G_System_QUICK_FIX_ENGINEERING.HotFixID,SMS_G_System_QUICK_FIX_ENGINEERING.Description,SMS_G_System_QUICK_FIX_ENGINEERING.Caption,SMS_G_System_QUICK_FIX_ENGINEERING.Timestamp
+            systems.Name0				AS machine_name,
+            updates.Description0		AS hotfix_desc,
+            updates.HotFixID0			AS hotfix_id,
+            updates.InstalledOn0		AS hotfix_installdate,
+            updates.InstalledBy0		AS hotfix_installedby,
+            updates.Caption0			AS hotfix_caption
+
         FROM
-            SMS_R_System
-        INNER JOIN 
-            SMS_G_System_QUICK_FIX_ENGINEERING on SMS_R_System.ResourceID = SMS_G_System_QUICK_FIX_ENGINEERING.ResourceID
+            [dbo].[v_R_System] as systems
+        JOIN 
+            v_GS_QUICK_FIX_ENGINEERING AS updates
+                ON systems.ResourceID = updates.ResourceID
         WHERE
-            SMS_R_SYSTEM.Name= '$requestorMachine'
-    ")
-
-    $updateList = @()
-
-    $updates | ForEach-Object {
-        $update = $_.SMS_G_System_QUICK_FIX_ENGINEERING
-        
-        $updateList += [PSCustomObject]@{
-            HotFixID = $update.HotFixID
-            Description = $update.Description
-            Caption = $update.Caption
-            InstalledOn = ($update.TimeStamp | Get-Date -Format "yyyy-MM-dd HH:mm:ss")
-        }
-    }
+            systems.Name0 = @machine
+        ORDER BY
+            updates.HotFixID0
+    " -Parameters @{ Machine = $requestorMachine }
 
     #Table header
     '<style type="text/css">
@@ -37,18 +33,20 @@ if($operation -eq "listupdates" -and $(Test-scupPSRole -Name "helpdesk" -User $D
     <tr>
     <th>Hotfix ID</th>
     <th>Description</th>
-    <th>InstalledOn</th>
+    <th>Installed On</th>
+    <th>Installed By</th>
     <th>URL</th>
     </tr>
     '
 
     #Fill table
-    $updateList.GetEnumerator() | Sort-Object -Property 'InstalledOn' -Descending | ForEach-Object {
+    $query | ForEach-Object {
         "<tr>
-            <td scope='col'>$($_.HotFixID)</td>
-            <td scope='col'>$($_.Description)</td>
-            <td scope='col'>$($_.InstalledOn)</td>
-            <td scope='col'><a href='$($_.Caption)'>$($_.Caption)</a></td>
+            <td scope='col'>$($_.hotfix_id)</td>
+            <td scope='col'>$($_.hotfix_desc)</td>
+            <td scope='col'>$($_.hotfix_installdate)</td>
+            <td scope='col'>$($_.hotfix_installedby)</td>
+            <td scope='col'><a href='$($_.hotfix_caption)'>$($_.hotfix_caption)</a></td>
         </tr>"
     }
 

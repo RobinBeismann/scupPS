@@ -69,6 +69,13 @@ select.invalid {
 </style>
 
 <script type="text/javascript">
+    var typewatch = function(){
+        var timer = 0;
+        return function(callback, ms){
+            clearTimeout (timer);
+            timer = setTimeout(callback, ms);
+        }  
+    }();
 
     var url = '/api';
     var currentTab = 0; // Current tab is set to be the first tab (0)

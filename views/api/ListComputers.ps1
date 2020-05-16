@@ -1,43 +1,43 @@
-#Request Information
 if($operation -eq "listcomputers" -and $(Test-scupPSRole -Name "helpdesk" -User $Data.authenticatedUser) -and ($collection = $Data.Query.submitcollection) -and ($collection -in $((Get-scupPSValue -Name "Collection_BrowsingAllowed").Split(";") ))){
     
     #Get Computers
-    $wmiComputers = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "
-    SELECT
-        * 
-    FROM SMS_R_System
-     
-    JOIN 
-        SMS_UserMachineRelationship 
-    ON 
-        SMS_R_System.ResourceID  = SMS_UserMachineRelationship.ResourceID
+    $query = Invoke-scupCCMSqlQuery -Query "
+        SELECT
+            [system].name0 AS machine_name,
+            (
+            CASE
+            WHEN [system].user_domain0 IS NOT NULL AND
+                [system].user_name0 IS NOT NULL THEN Concat(
+                [system].user_domain0,
+                '\', [system].user_name0)
         
-    JOIN 
-        SMS_G_System_CH_ClientSummary 
-    ON 
-        SMS_R_System.ResourceID = SMS_G_System_CH_ClientSummary.ResourceID
-
-    WHERE ResourceID in 
-        (
-            SELECT 
-                ResourceID
-            FROM 
-                SMS_FullCollectionMembership 
-            JOIN 
-                SMS_Collection 
-            ON 
-                SMS_FullCollectionMembership.CollectionID = SMS_Collection.CollectionID 
-            WHERE
-                SMS_Collection.name LIKE `'$collection`'
-         )
-    ORDER BY
-        SMS_R_System.Name
-    "
-    
-    $computers = @{}
-    $wmiComputers | ForEach-Object {
-        $computers[$_.SMS_R_System.Name] = $_
-    }
+            END
+            ) AS machine_user,
+            [system].ad_site_name0 AS machine_lastadsite,
+            [clientsummary].lastactivetime AS machine_lastclientactivity,
+            [computer_system].manufacturer0 AS machine_manufacturer,
+            [computer_system].model0 AS machine_model,
+            [system_product].identifyingnumber0 AS machine_serialnumber,
+            [processor].name0 AS machine_cpu,
+            Concat(([computer_system].totalphysicalmemory0 / 1024), ' MB ') AS machine_memory
+        FROM [dbo].[v_r_system] AS [system]
+        LEFT JOIN v_ch_clientsummary AS [clientsummary]
+            ON [system].resourceid = [clientsummary].resourceid
+        LEFT JOIN v_gs_processor AS processor
+            ON [system].resourceid = [processor].resourceid
+        LEFT JOIN v_gs_computer_system_product AS [system_product]
+            ON [system].resourceid = system_product.resourceid
+        LEFT JOIN v_gs_computer_system AS [computer_system]
+            ON [system].resourceid = [computer_system].resourceid
+        WHERE [system].resourceid IN (SELECT
+            membership.resourceid
+        FROM [dbo].[v_fullcollectionmembership] AS membership
+        LEFT JOIN [dbo].[v_collections] AS collections
+            ON [collections].[siteid] = [membership].collectionid
+        WHERE collections.collectionname LIKE @Collection)
+        AND [system].client0 = 1
+        ORDER BY [system].name0
+    " -Parameters @{ Collection = $collection }
 
     #Table header
     '
@@ -52,30 +52,29 @@ if($operation -eq "listcomputers" -and $(Test-scupPSRole -Name "helpdesk" -User 
     <table class="table table-responsive">
     <tr>
     <th>Name</th>
-    <th>Primary User</th>
-    <th>Last Logged On</th>
+    <th>Last User</th>
     <th>Last AD Site</th>
     <th>Last Client Activity</th>
+    <th>Manufacturer</th>
+    <th>Model</th>
+    <th>Serialnumber</th>
+    <th>CPU</th>
+    <th>Memory</th>
     </tr>
     '
 
     #Fill table
-    $computers.GetEnumerator() | Sort-Object -Property Name | ForEach-Object {
-        $System = $_.Value.SMS_R_System
-        $ClientSum = $_.Value.SMS_G_System_CH_ClientSummary
-        $Affinity = $_.Value.SMS_UserMachineRelationship
+    $query | ForEach-Object {
         "<tr>
-            <td scope='col'>$($System.Name)</td>
-            <td scope='col'>$($Affinity.UniqueUserName)</td>
-            <td scope='col'>
-                $(        
-                    if($System.LastLogonUserDomain -and $System.LastLogonUsername){
-                        "$($System.LastLogonUserDomain)\$($System.LastLogonUserName)"
-                    }
-                )
-            </td>
-            <td scope='col'>$($System.ADSiteName)</td>
-            <td scope='col'>$($clientSum.LastActiveTime | Get-Date -Format "yyyy-MM-dd HH:mm:ss")</td>
+            <td scope='col'>$($_.machine_name)</td>
+            <td scope='col'>$($_.machine_user)</td>
+            <td scope='col'>$($_.machine_lastadsite)</td>
+            <td scope='col'>$($_.machine_lastclientactivity | Get-Date -Format "yyyy-MM-dd HH:mm:ss")</td>
+            <td scope='col'>$($_.machine_manufacturer)</td>
+            <td scope='col'>$($_.machine_model)</td>
+            <td scope='col'>$($_.machine_serialnumber)</td>
+            <td scope='col'>$($_.machine_cpu)</td>
+            <td scope='col'>$($_.machine_memory)</td>
         </tr>"
     }
 

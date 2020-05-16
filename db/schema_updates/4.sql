@@ -6,7 +6,7 @@ CREATE TABLE [dbo].[costcenters](
 	[costcenter_managers] [nvarchar](max) NOT NULL,
 	[costcenter_created] [datetime] NULL,
 	[costcenter_modified] [datetime] NULL,
-    ) ON [DATA] TEXTIMAGE_ON [DATA]
+    )
 GO
 
 ALTER TABLE [dbo].[costcenters] ADD  CONSTRAINT [DF_costcenters_costcenter_created]  DEFAULT (CURRENT_TIMESTAMP) FOR [costcenter_created]

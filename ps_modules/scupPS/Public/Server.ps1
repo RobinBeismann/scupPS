@@ -1,23 +1,25 @@
 function Get-ServerReadyness(){
-    if(
-        ($ready = Get-scupPSValue -Name "scupPSServerReady") -and
-        $ready -eq $true
-    ){
-        return $true
-    }
+    
+    if(Test-PodeState -Name "scupPSServerReady"){
+        $ready = Get-PodeState -Name "scupPSServerReady"
+    }    
 
     $ready = $true
-    $ConfigVals.GetEnumerator() | Where-Object { $_.Value.Type -and $_.Value.Type -le 3 } | ForEach-Object {
+    (Get-scupPSDefaultValues).GetEnumerator() | Where-Object { 
+        (
+            $_.Value.Type -or
+            $_.Value.Type -eq 0
+        ) -and
+        $_.Value.Type -le 3 
+    } | ForEach-Object {
         if(
             !($val = (Get-scupPSValue -Name $_.Name)) -or
             $val.StartsWith("<") -or
             $val.EndsWith(">")
         ){
-            Write-Host("[$(Get-Date)] Required Value for $($_.Name) is not yet set - server not ready.")
             $ready = $false
         }       
     }
-    Set-scupPSValue -Name "scupPSServerReady" -Value $ready
-    Write-Host("Ready State: $ready")
+    $null = Set-PodeState -Name "scupPSServerReady" -Value $ready
     return $ready
 }

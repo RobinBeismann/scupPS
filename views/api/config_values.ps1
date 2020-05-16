@@ -34,6 +34,19 @@ if(
                 $res = $true
             }
         }
+
+        "SCCM_SiteDatabaseInstance" {
+            if(Invoke-Sqlcmd2 -ServerInstance $requestInfo.FieldValue -Query "SELECT 1" -ConnectionTimeout 2 -ErrorAction SilentlyContinue){
+                $res = $true
+            }
+        }
+
+        "SCCM_SiteDatabaseName" {
+            if(Invoke-Sqlcmd2 -ServerInstance (Get-scupPSValue -Name "SCCM_SiteDatabaseInstance") -Database $requestInfo.FieldValue -Query "SELECT 1" -ConnectionTimeout 2 -ErrorAction SilentlyContinue){
+                $res = $true
+            }
+        }
+
         "scupPSAdminGroup" {
             if(
                 ($user = Get-CimInstance -Computer (Get-scupPSValue -Name "SCCM_SiteServer") -Namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -Query "select * from sms_r_user where DistinguishedName='$($Data.Auth.User.DistinguishedName.Replace("\","\\"))'") -and

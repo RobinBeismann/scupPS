@@ -19,29 +19,6 @@ this.get = function(aUrl, aCallback, requesttype) {
     }
 }
 
-function escapeString(s1){
-    if (s1.length>0) {
-        var i,j;
-        var s2=escape(s1);
-        //Zeilenumbrueche verkuerzen
-        var a1=s2.split("%0D");
-        s2="";
-        for (i=0;i<a1.length;i++) {
-          s1=a1[i];
-          if (s1.substring(0,3)=="%0A") { s1=s1.substring(3,s1.length); }
-          s2+="%0D"+s1;
-        }
-        s2=s2.substring(3,s2.length);
-        //Leerzeichen ohne Code
-        var a2=s2.split("%20");
-        s2="";
-        for (i=0;i<a2.length;i++) { s1=a2[i]; s2+=" "+s1;}
-        s2=s2.substring(1,s2.length);
-        console.log(s2);
-        return(s2);
-    }
-}
-
 function handleRequest(requestAction,requestID,userFirstname,userLastname,userMail,softwareTitle,machine,approverFirstname,approverLastname,approverMail) {
 
     var suburl = (url + '?operation=' + requestAction + 
@@ -68,39 +45,73 @@ function handleRequest(requestAction,requestID,userFirstname,userLastname,userMa
 </script>
 
 $(
+    
     $attrCostCenter = Get-scupPSValue -Name "Attribute_costCenter"
     $attrManagedCostCenters = Get-scupPSValue -Name "Attribute_managedcostCenters"
 
     $query = "
-        SELECT
-            [dbo].[applications].app_modelname AS app_modelname,
-            [dbo].[applications].app_publisher AS app_publisher,
-            [dbo].[applications].app_title AS app_title,
-            [dbo].[applications].app_description AS app_description,
-            [dbo].[users].givenName AS user_givenName,
-            [dbo].[users].sn AS user_surname,
-            [dbo].[users].mail AS user_mail,
-            [dbo].[users].FullUserName AS user_displayName,
-            [dbo].[users].SID AS user_sid,
-            [dbo].[users].$attrCostCenter AS user_costcenter,
-            [dbo].[users].$attrManagedCostCenters AS user_managedcostcenters,
-            [dbo].[ApplicationRequests].RequestGuid AS req_guid,
-            [dbo].[ApplicationRequests].Comments AS req_comments,
-            [dbo].[ApplicationRequests].CurrentState AS req_currentState,
-            [dbo].[ApplicationRequests].RequestHistory AS req_history,
-            [dbo].[ApplicationRequests].RequestedMachine AS req_machine
-        FROM
-            [dbo].[ApplicationRequests]
-        JOIN
-            [dbo].[users]
-        ON
-            [dbo].[users].[SID] = [dbo].[ApplicationRequests].UserSid
-        JOIN
-            [dbo].[applications]
-        ON
-            [dbo].[applications].[app_modelname] = [dbo].[ApplicationRequests].[ModelName]
-    "
+        SELECT    
+                requests.ci_uniqueid          AS request_uniqueid, 
+                requests.displayname          AS request_displayname, 
+                requests.currentstate         AS request_currentsate, 
+                requests.modelid              AS request_modelid, 
+                requests.unique_user_name0    AS request_uniquename, 
+                requests.sid0                 AS request_usersid, 
+                requests.netbios_name0        AS request_machinename, 
+                requests.machineresourceid    AS request_machin_id, 
+                requests.requestguid          AS request_guid, 
+                requests.currentstate         AS request_state, 
+                requests.comments             AS request_comments, 
+                apps.app_modelname            AS app_modelname, 
+                apps.app_modelid              AS app_modelid, 
+                apps.app_civersion            AS app_civersion, 
+                apps.app_title			      AS app_title, 
+                apps.app_issuperseded         AS app_issuperseded, 
+                apps.app_issuperseding        AS app_issuperseding, 
+                apps.app_manufacturer         AS app_manufacturer, 
+                apps.app_version              AS app_version, 
+                apps.app_description          AS app_description, 
+                apps.app_title_admin          AS app_title_admin, 
+                apps.app_description_admin    AS app_description_admin,
+                apps.app_icon_hash            AS app_icon_hash,
+                apps.app_CI_ID			      AS app_CI_ID, 
+                users.full_user_name0         AS user_displayname, 
+                users.mail0                   AS user_mail, 
+                users.extensionattribute12    AS user_costcenter, 
+                users.extensionattribute5     AS user_managedcostcenter,          
+                users.$attrCostCenter         AS user_costcenter,
+                users.$attrManagedCostCenters AS user_managedcostcenter
 
+        FROM      v_userapprequests             AS requests 
+        LEFT JOIN 
+                ( 
+                            SELECT    
+                                    [apps].[ModelName]                              AS app_modelname, 
+                                    [apps].[ModelID]                                AS app_modelid, 
+                                    [localizedproperties].[CI_ID]                   AS app_CI_ID, 
+                                    [localizedproperties].[Publisher]               AS app_manufacturer, 
+                                    [localizedproperties].[Title]                   AS app_title, 
+                                    [localizedproperties].[Description]             AS app_description, 
+                                    [localizedproperties].[Version]                 AS app_version, 
+                                    [localizedproperties].[LocaleID]                AS app_localeid, 
+                                    BINARY_CHECKSUM([localizedproperties].[Icon])   AS app_icon_hash,
+                                    [localizedproperties].[InfoUrl]                 AS app_infourl, 
+                                    [localizedproperties].[InfoUrlText]             AS app_infourltxt, 
+                                    [localizedproperties].[PrivacyUrl]              AS app_privacyurl, 
+                                    [localizedproperties].[UserCategories]          AS app_usercategories, 
+                                    [apps].[DisplayName]                            AS app_title_admin, 
+                                    [apps].[Description]                            AS app_description_admin, 
+                                    [apps].[IsSuperseded]                           AS app_issuperseded, 
+                                    [apps].[IsSuperseding]                          AS app_issuperseding, 
+                                    [apps].[CIVersion]                              AS app_civersion 
+                            FROM      fn_listlatestapplicationcis(1033)             AS apps 
+                            LEFT JOIN fn_localizedappproperties(1033)               AS localizedproperties 
+                            ON        apps.ci_id = localizedproperties.ci_id )      AS apps 
+        ON        apps.app_modelid = requests.modelid 
+        LEFT JOIN [dbo].[v_R_User] AS users 
+        ON        users.sid0 = requests.sid0 
+        WHERE     requests.unique_user_name0 != 'None'
+    "
 
     if(
         $Data.authenticatedUser -and
@@ -118,15 +129,15 @@ $(
 
         $ShowApprovals = $Data.Query['ShowApprovals']        
         if($ShowApprovals -ne "history"){
-            $query = $query + "WHERE [dbo].[ApplicationRequests].CurrentState = '1' and [dbo].[ApplicationRequests].CurrentState !='2'"
+            $query = $query + "AND requests.CurrentState = '1' and requests.CurrentState !='2'"
         }else{        
-            $query = $query + "WHERE [dbo].[ApplicationRequests].CurrentState != '1' and [dbo].[ApplicationRequests].CurrentState !='2'"
+            $query = $query + "AND requests.CurrentState != '1' and requests.CurrentState !='2'"
         }
 
         #Get approval requests
         if(!($isAdmin = Test-scupPSRole -Name "helpdesk" -User $Data.authenticatedUser)){
             $query = $query + "
-                AND [dbo].[users].$attrCostCenter IN (
+                AND users.$attrCostCenter IN (
                     $(
                         ($managedCostcenters | ForEach-Object {
                             "$_"
@@ -135,7 +146,7 @@ $(
                 )
             "
         }
-        $managedRequests = Invoke-scupPSSqlQuery -Query $query
+        $managedRequests = Invoke-scupCCMSqlQuery -Query $query
         
         
         #Build request table
@@ -154,19 +165,18 @@ $(
         '
 
         if(!$ShowApprovals -or $ShowApprovals -ne "history"){
-
             $managedRequests | ForEach-Object {
                 "<tr>
-                    <td scope='col'>$($_.user_displayName)</td>
+                    <td scope='col'>$($_.user_displayname) </td>
                     <td scope='col'>$($_.user_costcenter)</td>
                     <td scope='col'><a href='mailto:$($_.user_mail)'>$($_.user_mail)</a></td>
                     <td scope='col'>$($_.app_title)</td>
-                    <td scope='col'>$($_.req_machine)</td>
+                    <td scope='col'>$($_.request_machinename)</td>
                     <td scope='col'>$(Get-HTMLString($_.app_description))</td>
-                    <td scope='col'>$(Get-HTMLString($_.req_comments))</td>
+                    <td scope='col'>$(Get-HTMLString($_.request_comments))</td>
                     <td scope='col'>
-                        <button id='btn_approve_$($_.req_guid)' name='btn_approve' class='btn btn-primary' onclick='handleRequest(`"approverequest`",`"$($_.req_guid)`"`)'>Approve</button>
-                        <button id='btn_deny_$($_.req_guid)' name='btn_deny' class='btn btn-primary' onclick='handleRequest(`"denyrequest`",`"$($_.req_guid)`")'>Deny</button>
+                        <button id='btn_approve_$($_.request_guid)' name='btn_approve' class='btn btn-primary' onclick='handleRequest(`"approverequest`",`"$($_.request_guid)`"`)'>Approve</button>
+                        <button id='btn_deny_$($_.request_guid)' name='btn_deny' class='btn btn-primary' onclick='handleRequest(`"denyrequest`",`"$($_.request_guid)`")'>Deny</button>
                     </td>
                 </tr>
                 "
@@ -176,35 +186,35 @@ $(
             #Build history request table
             $managedRequests | ForEach-Object {
                 "<tr>
-                    <td scope='col'>$($_.user_displayName)</td>
+                    <td scope='col'>$($_.user_displayname)</td>
                     <td scope='col'>$($_.user_costcenter)</td>
                     <td scope='col'><a href='mailto:$($_.user_mail)'>$($_.user_mail)</a></td>
-                    <td scope='col'>$($_.app_title)</td>
-                    <td scope='col'>$($_.req_machine)</td>
+                    <td scope='col'>$(if($url = Get-IconUrl -CI_ID $_.app_CI_ID -Hash $_.app_icon_hash){ "<img src='$url' style='max-width: 3%; height: auto;' />   "} )$($_.app_title)</td>
+                    <td scope='col'>$($_.request_machinename)</td>
                     <td scope='col'>$(Get-HTMLString($_.app_description))</td>
-                    <td scope='col'>$(Get-HTMLString($_.req_comments))</td>
+                    <td scope='col'>$(Get-HTMLString($_.request_comments))</td>
                     <td scope='col'>
-                    <button id='btn_approve_$($_.req_guid)' name='btn_approve' class='btn btn-primary' onclick='handleRequest(`"approverequest`",`"$($_.req_guid)`"`)'>Approve</button>
+                    <button id='btn_approve_$($_.request_guid)' name='btn_approve' class='btn btn-primary' onclick='handleRequest(`"approverequest`",`"$($_.request_guid)`"`)'>Approve</button>
                         
                         $(
                             #Check if this request is already approved
-                            if($_.SMS_UserApplicationRequest.CurrentState -eq 4){
+                            if($_.request_state -eq 4){
                                 #Switch to revoke
                                 $btnAction = "revokerequest"
                                 $btnDescription = "Revoke"
                                 #Disable approve button
-                                "<script type='text/javascript'>document.getElementById('btn_approve_$($_.req_guid)').disabled = true;</script>"
+                                "<script type='text/javascript'>document.getElementById('btn_approve_$($_.request_guid)').disabled = true;</script>"
                             }else{
                                 $btnAction = "denyrequest"
                                 $btnDescription = "Deny"
                             }
                         )
-                        <button id='btn_deny_$($_.req_guid)' name='btn_deny' class='btn btn-primary' onclick='handleRequest(`"$($btnAction)`",`"$($_.req_guid)`")'>$btnDescription</button>
+                        <button id='btn_deny_$($_.request_guid)' name='btn_deny' class='btn btn-primary' onclick='handleRequest(`"$($btnAction)`",`"$($_.request_guid)`")'>$btnDescription</button>
                         
                         $(
                             #Set Deny button to disabled if request is not approved
-                            if($_.SMS_UserApplicationRequest.CurrentState -ne 4){
-                                "<script type='text/javascript'>document.getElementById('btn_deny_$($_.req_guid)').disabled = true;</script>"
+                            if($_.request_state -ne 4){
+                                "<script type='text/javascript'>document.getElementById('btn_deny_$($_.request_guid)').disabled = true;</script>"
                             }
                         )                
                     </td>
@@ -217,8 +227,8 @@ $(
         }
     }else{
         #Get approval requests
-        $query = $query + "WHERE [dbo].[users].SID = '$($Data.authenticatedUser.SID)'"
-        $openRequests = Invoke-scupPSSqlQuery -Query $query
+        $query = $query + "AND users.SID0 = '$($Data.authenticatedUser.SID)'"
+        $openRequests = Invoke-scupCCMSqlQuery -Query $query
         #Build request table
         '
         <table class="table table-responsive">
@@ -233,9 +243,9 @@ $(
         $openRequests | ForEach-Object {
             "<tr>
                 <td scope='col'>$($_.app_title)</td>
-                <td scope='col'>$($_.req_machine)</td>
+                <td scope='col'>$($_.request_machinename)</td>
                 <td scope='col'>$(Get-HTMLString($_.app_description))</td>
-                <td scope='col'>$(Get-HTMLString($_.req_comments))</td>
+                <td scope='col'>$(Get-HTMLString($_.request_comments))</td>
             </tr>
             "
         }
