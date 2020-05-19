@@ -41,8 +41,9 @@ function handleRequest(requestAction,requestID,userFirstname,userLastname,userMa
     document.getElementById('btn_deny_' + requestID).disabled = true;
     //document.location.reload();            
 }
-
 </script>
+<link rel="stylesheet" type="text/css" href="assets/datatables/datatables.min.css"/>
+<script type="text/javascript" src="assets/datatables/datatables.min.js"></script>
 
 $(
     
@@ -119,13 +120,6 @@ $(
     ){ 
         
         "<br/><br/>"
-        '<style type="text/css">
-        .tg  {border-collapse:collapse;border-spacing:0;}
-        .tg td{font-family:Arial, sans-serif;font-size:14px;padding:10px 5px;border-style:solid;border-width:1px;overflow:hidden;word-break:normal;border-color:black;}
-        .tg th{font-family:Arial, sans-serif;font-size:14px;font-weight:normal;padding:10px 5px;border-style:solid;border-width:1px;overflow:hidden;word-break:normal;border-color:black;}
-        .tg .tg-0lax{text-align:left;vertical-align:top}
-        </style>
-        '
 
         $ShowApprovals = $Data.Query['ShowApprovals']        
         if($ShowApprovals -ne "history"){
@@ -150,27 +144,29 @@ $(
         
         
         #Build request table
-        '
-        <table class="table table-responsive">
-            <tr>
-            <th>User</th>
-            <th>Costcenter</th>
-            <th>E-Mail Address</th>
-            <th>Software</th>
-            <th>Current Machine</th>
-            <th>Price/Alternatives</th>
-            <th>Comment</th>
-            <th>Action</th>
-            </tr>
-        '
+        "
+        <div className='table-responsive'>
+        <table class='table table-hover'>
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Costcenter</th>
+                    <th>Software</th>
+                    <th>Current Machine</th>
+                    <th>Price/Alternatives</th>
+                    <th>Comment</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+        "
 
         if(!$ShowApprovals -or $ShowApprovals -ne "history"){
             $managedRequests | ForEach-Object {
                 "<tr>
-                    <td scope='col'>$($_.user_displayname) </td>
+                    <td scope='col'><a href='mailto:$($_.user_mail)'>$($_.user_displayname)</a></td>
                     <td scope='col'>$($_.user_costcenter)</td>
-                    <td scope='col'><a href='mailto:$($_.user_mail)'>$($_.user_mail)</a></td>
-                    <td scope='col'>$($_.app_title)</td>
+                    <td scope='col' class='fix-col'>$($_.app_title)</td>
                     <td scope='col'>$($_.request_machinename)</td>
                     <td scope='col'>$(Get-HTMLString($_.app_description))</td>
                     <td scope='col'>$(Get-HTMLString($_.request_comments))</td>
@@ -181,15 +177,13 @@ $(
                 </tr>
                 "
             }
-            '</table><br/>'
         }else{
             #Build history request table
             $managedRequests | ForEach-Object {
                 "<tr>
-                    <td scope='col'>$($_.user_displayname)</td>
+                    <td scope='col'><a href='mailto:$($_.user_mail)'>$($_.user_displayname)</a></td>
                     <td scope='col'>$($_.user_costcenter)</td>
-                    <td scope='col'><a href='mailto:$($_.user_mail)'>$($_.user_mail)</a></td>
-                    <td scope='col'>$(if($url = Get-IconUrl -CI_ID $_.app_CI_ID -Hash $_.app_icon_hash){ "<img src='$url' style='max-width: 3%; height: auto;' />   "} )$($_.app_title)</td>
+                    <td scope='col' class='fix-col'>$(if($url = Get-IconUrl -CI_ID $_.app_CI_ID -Hash $_.app_icon_hash){ "<img src='$url' style='height: 2em;' />   "} )$($_.app_title)</td>
                     <td scope='col'>$($_.request_machinename)</td>
                     <td scope='col'>$(Get-HTMLString($_.app_description))</td>
                     <td scope='col'>$(Get-HTMLString($_.request_comments))</td>
@@ -223,7 +217,6 @@ $(
 
             
             }
-            '</table><br/>'
         }
     }else{
         #Get approval requests
@@ -248,10 +241,9 @@ $(
                 <td scope='col'>$(Get-HTMLString($_.request_comments))</td>
             </tr>
             "
-        }
-        '</table><br/>'
-        
+        }        
     }
+    '<tbody></table></div><br/>'
     
 )
 <!-- ############################################### End ################################################## -->
