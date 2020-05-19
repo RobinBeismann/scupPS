@@ -9,17 +9,7 @@ if(
         $length = 10
     }
 
-    function Build-Response($Operation,$Data,$Start,$Length,$RecordsTotal,$Draw){
-        $tbl = [ordered]@{
-            draw = $Draw
-            recordsTotal = $RecordsTotal
-            recordsFiltered = $RecordsTotal
-        }
 
-        $tbl.data = $Data
-        return $tbl | ConvertTo-Json
-    }
-  
     $attrCostCenter = Get-scupPSValue -Name "Attribute_costCenter"
     $attrManagedCostCenters = Get-scupPSValue -Name "Attribute_managedcostCenters"
 
@@ -57,12 +47,11 @@ if(
 
         if($search = $Data.Query.'search[value]'){
             $additionalClauses += "
-                apps.app_description LIKE @Search OR
-                apps.app_manufacturer LIKE @Search OR
-                users.full_user_name0 LIKE @Search OR
-                requests.comments LIKE @Search
+                LOWER(apps.app_description) LIKE LOWER(@Search) OR
+                LOWER(apps.app_manufacturer) LIKE LOWER(@Search) OR
+                LOWER(users.full_user_name0) LIKE LOWER(@Search) OR
+                LOWER(requests.comments) LIKE LOWER(@Search)
             "
-            $Data.Query.'draw' = 1
         }
 
         $additionalClauses | Foreach-Object {
@@ -87,36 +76,52 @@ if(
             LengthRow = [int]$length
             Search = "%$search%"
         })[0]
-        
-        #Build request table
-        if(!$ShowApprovals -or $ShowApprovals -ne "history"){
-            
-            Build-Response -Operation $operation -Start $Start -Length $length -RecordsTotal $TotalCount -Draw $Data.Query.'draw' -Data (
-                $managedRequests | ForEach-Object {
-                        [ordered]@{
-                            "User" = "<a href='mailto:$($_.user_mail)'>$($_.user_displayname)</a>"
-                            "Costcenter" = $($_.user_costcenter)
-                            "Application" = $_.app_title
-                            "Machine" = $_.request_machinename
-                            "Price" = $_.app_description
-                            "Comment" = $_.request_comments
-                        }
-                }
-            )
-        }else{
-            Build-Response -Operation $operation -Start $Start -Length $length -RecordsTotal $TotalCount -Draw $Data.Query.'draw' -Data (
-                $managedRequests | ForEach-Object {
+    
+        Get-DataTablesResponse -Operation $operation -Start $Start -Length $length -RecordsTotal $TotalCount -Draw $Data.Query.'draw' -Data (
+            $managedRequests | ForEach-Object {
                     [ordered]@{
-                            "User" = "<a href='mailto:$($_.user_mail)'>$($_.user_displayname)</a>"
-                            "Costcenter" = $($_.user_costcenter)
-                            "Application" = $_.app_title
-                            "Machine" = $_.request_machinename
-                            "Price" = $_.app_description
-                            "Comment" = $_.request_comments
-                        }
-                }
-            )
-        }
+                        "User" = "<a href='mailto:$($_.user_mail)'>$($_.user_displayname)</a>"
+                        "Costcenter" = $_.user_costcenter
+                        "Application" = $_.app_title
+                        "Machine" = $_.request_machinename
+                        "Price" = $_.app_description
+                        "Comment" = $_.request_comments
+                        "Actions" = $(                                                             
+                                if($ShowApprovals -ne "history"){
+                                    #Pending Buttons
+                                    
+                                    "<button id='btn_approve_$($_.request_guid)' name='btn_approve' class='btn btn-primary' onclick='handleRequest(`"approverequest`",`"$($_.request_guid)`"`)'>Approve</button>"
+                                    "<button id='btn_deny_$($_.request_guid)' name='btn_deny' class='btn btn-primary' onclick='handleRequest(`"denyrequest`",`"$($_.request_guid)`")'>Deny</button> "           
+                                    
+                                }else{
+                                    #History Buttons                                    
+                                    "<button id='btn_approve_$($_.request_guid)' name='btn_approve' class='btn btn-primary' onclick='handleRequest(`"approverequest`",`"$($_.request_guid)`"`)'>Approve</button>"
+                                    
+                                    #Check if this request is already approved
+                                    if($_.request_state -eq 4){
+                                        #Switch to revoke
+                                        $btnAction = "revokerequest"
+                                        $btnDescription = "Revoke"
+                                        #Disable approve button
+                                        "<script type='text/javascript'>document.getElementById('btn_approve_$($_.request_guid)').disabled = true;</script>"
+                                    }else{
+                                        $btnAction = "denyrequest"
+                                        $btnDescription = "Deny"
+                                    }
+                                    
+                                    "<button id='btn_deny_$($_.request_guid)' name='btn_deny' class='btn btn-primary' onclick='handleRequest(`"$btnAction`",`"$($_.request_guid)`")'>$btnDescription</button>"
+                                    
+                                    #Set Deny button to disabled if request is not approved
+                                    if($_.request_state -ne 4){
+                                        "<script type='text/javascript'>document.getElementById('btn_deny_$($_.request_guid)').disabled = true;</script>"
+                                    }
+                                     
+                                }
+                            )                         
+                    }
+            }
+        )
+       
     }else{
         #Get approval requests
         $AppReqQuery = $AppReqQuery + "AND users.SID0 = '$($Data.authenticatedUser.SID)'"

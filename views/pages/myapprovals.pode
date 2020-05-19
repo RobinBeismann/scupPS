@@ -24,6 +24,7 @@
                 processing: true,
                 serverSide: true,
                 searchDelay: 1000,
+                ordering: false,
                 ajax: "/api?operation=generateApprvlTable&ShowApprovals=$($Data.Query['ShowApprovals'])",
                 columns: columns
             } );

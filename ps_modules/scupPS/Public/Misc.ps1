@@ -183,3 +183,14 @@ function Get-GeneratedTable($arr){
     #End Table    
     '</table><br/>'
 }
+
+function Get-DataTablesResponse($Operation,$Data,$Start,$Length,$RecordsTotal,$Draw){
+    $tbl = [ordered]@{
+        draw = $Draw
+        recordsTotal = $RecordsTotal
+        recordsFiltered = $RecordsTotal
+    }
+
+    $tbl.data = $Data
+    return $tbl | ConvertTo-Json
+}
