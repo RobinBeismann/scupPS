@@ -11,7 +11,7 @@
 
     function getDT() {
         `$.ajax({
-        url: "/api?operation=generateApprvlTableHeader&ShowApprovals=$($Data.Query['ShowApprovals'])",
+        url: "/api?operation=AppRequestTable-Headers&ShowApprovals=$($Data.Query['ShowApprovals'])",
         success: function (data) {
             data = JSON.parse(data);
             columnNames = Object.keys(data.data[0]);
@@ -25,7 +25,7 @@
                 serverSide: true,
                 searchDelay: 1000,
                 ordering: false,
-                ajax: "/api?operation=generateApprvlTable&ShowApprovals=$($Data.Query['ShowApprovals'])",
+                ajax: "/api?operation=AppRequestTable-Data&ShowApprovals=$($Data.Query['ShowApprovals'])",
                 columns: columns
             } );
         }

@@ -1,5 +1,5 @@
 if(
-    ($operation -eq "generateApprvlTable") -or ($operation -eq "generateApprvlTableHeader")
+    ($operation -eq "AppRequestTable-Data") -or ($operation -eq "AppRequestTable-Headers")
 ){    
     if(
         !($start = $Data.Query.start) -or
@@ -65,27 +65,41 @@ if(
             OFFSET @StartRow ROWS
             FETCH NEXT @LengthRow ROWS ONLY
         "
-        #Get approval requests
-        $managedRequests = Invoke-scupCCMSqlQuery -Query $AppReqQuery -Parameters @{
-            StartRow = [int]$start
-            LengthRow = [int]$length
-            Search = "%$search%"
+
+        #Retrieve Table Headers only once and cache them in Pode afterwards
+        if(
+            ($operation -eq "AppRequestTable-Headers") -and
+            ($headerCache = Get-PodeState -Name "CacheApprvlTableHeader")
+        ){
+            #Strip it down to one row, thats enough
+            $managedRequests = $headerCache | Select-Object -First 1
+        }else{
+            #This is either not a table preview or our cache is empty, process as usual and return results
+            $managedRequests = Invoke-scupCCMSqlQuery -Query $AppReqQuery -Parameters @{
+                StartRow = [int]$start
+                LengthRow = [int]$length
+                Search = "%$search%"
+            }
+            $TotalCount = (Invoke-scupCCMSqlQuery -Query $AppReqCountQuery -Parameters @{
+                StartRow = [int]$start
+                LengthRow = [int]$length
+                Search = "%$search%"
+            })[0]
+
+            #Write our result to the Pode Cache so we can reuse it
+            if($operation -eq "AppRequestTable-Headers"){
+                Set-PodeState -Name "CacheApprvlTableHeader" -Value ($managedRequests | Select-Object -First 1) | Out-Null
+            }
         }
-        $TotalCount = (Invoke-scupCCMSqlQuery -Query $AppReqCountQuery -Parameters @{
-            StartRow = [int]$start
-            LengthRow = [int]$length
-            Search = "%$search%"
-        })[0]
-    
         Get-DataTablesResponse -Operation $operation -Start $Start -Length $length -RecordsTotal $TotalCount -Draw $Data.Query.'draw' -Data (
             $managedRequests | ForEach-Object {
                     [ordered]@{
-                        "User" = "<a href='mailto:$($_.user_mail)'>$($_.user_displayname)</a>"
+                        "User" = "<a href='mailto:$($_.user_mail)'>$(Get-HTMLString($_.user_displayname))</a>"
                         "Costcenter" = $_.user_costcenter
-                        "Application" = $_.app_title
+                        "Application" = Get-HTMLString($_.app_title)
                         "Machine" = $_.request_machinename
-                        "Price" = $_.app_description
-                        "Comment" = $_.request_comments
+                        "Price" = Get-HTMLString($_.app_description)
+                        "Comment" = Get-HTMLString($_.request_comments)
                         "Actions" = $(                                                             
                                 if($ShowApprovals -ne "history"){
                                     #Pending Buttons

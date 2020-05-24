@@ -191,6 +191,6 @@ function Get-DataTablesResponse($Operation,$Data,$Start,$Length,$RecordsTotal,$D
         recordsFiltered = $RecordsTotal
     }
 
-    $tbl.data = $Data
+    $tbl.data = @($Data)
     return $tbl | ConvertTo-Json
 }

@@ -1,14 +1,48 @@
 $( 
-    #Include Includes    
-    Get-ChildItem -Path "$(Get-PodeState -Name "PSScriptRoot")\views\includes\lib" -File -Include "*.ps1" -Recurse | ForEach-Object {
-        . $_.FullName
-    }
-    
     $operation = $Data.Query.operation
     $Data.authenticatedUser = (Get-scupPSAuthUser($Data))
  
+    $requestedOperation = ($operation.Split("-"))[0]
     #Include Includes    
-    Get-ChildItem -Path "$(Get-PodeState -Name "PSScriptRoot")\views\api" -File -Include "*.ps1" -Recurse | ForEach-Object {
-        . $_.FullName
-    }   
+    try{
+        . "$(Get-PodeState -Name "PSScriptRoot")\views\api\$requestedOperation.ps1"
+    }catch{
+        $formatstring = "   
+                            <b>Operation `"{0}`" was passed to `"{1}`" and failed with the following error:</b>
+
+                            <b>Invocation Info - Command Name</b>:     
+                            {2}
+
+
+                            <b>Error Details - Message</b>:            
+                            {3}
+
+
+                            <b>InvocationInfo - PositionMessage</b>:   
+                            {4}
+
+
+                            <b>Category Info</b>:                      
+                            {5}
+
+
+                            <b>FullyQualifiedErrorId</b>:              
+                            {6}
+
+                            <b>Parameters</b>:
+        "
+        $fields =
+                $Operation,
+                $requestedOperation,
+                $_.InvocationInfo.MyCommand.Name,
+                $_.ErrorDetails.Message,
+                $_.InvocationInfo.PositionMessage,
+                $_.CategoryInfo.ToString(),
+                $_.FullyQualifiedErrorId
+        $errorString = $formatstring -f $fields
+        $Data.Query.GetEnumerator() | Foreach-Object {
+            $errorString += "<b>$($_.Name):</b> $($_.Value)`n"
+        }
+        Get-HTMLString($errorString)
+    }
 )
