@@ -19,7 +19,7 @@ if($operation -eq "listcomputersummary" -and $(Test-scupPSRole -Name "helpdesk" 
     GROUP BY
         (CONCAT([computer_system].Manufacturer0,' - ', [computer_system].Model0))
     ORDER BY
-        COUNT([computer_system].Model0)
+        COUNT([computer_system].Model0) DESC
     " -Parameters @{ Collection = $collection }
 
     #Table header
