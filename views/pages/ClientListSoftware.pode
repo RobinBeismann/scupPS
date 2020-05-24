@@ -31,7 +31,7 @@
         ){                
             var client = new HttpClient();
 
-            var suburl = (url + '?operation=listsoftware' + 
+            var suburl = (url + '?operation=ClientListSoftware_submit' + 
                             '&submitrequestmachine=' + machine
                             );
                             

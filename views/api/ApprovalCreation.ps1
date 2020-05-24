@@ -1,4 +1,4 @@
-if($operation -eq "ApprovalCreation-Preview" -or $operation -eq "ApprovalCreation-Create" -and $(Test-scupPSRole -Name "helpdesk" -User $Data.authenticatedUser)){
+if($operation -eq "ApprovalCreation_Preview" -or $operation -eq "ApprovalCreation_Create" -and $(Test-scupPSRole -Name "helpdesk" -User $Data.authenticatedUser)){
     #Request Information
     $requestorMachineName = $Data.Query.submitrequestmachine
     $requestorUser = $Data.Query.submitrequestuser
@@ -15,13 +15,13 @@ if($operation -eq "ApprovalCreation-Preview" -or $operation -eq "ApprovalCreatio
         ($requestorMachineGuid = $requestorMachine.SMSUniqueIdentifier)
     ){
         if(
-            ($operation -eq "ApprovalCreation-Preview") -and 
+            ($operation -eq "ApprovalCreation_Preview") -and 
             ($existingApproval | Where-Object { $_.CurrentState -eq 4 }) 
         ){
             "This approval already exists."
         }
         
-        if($operation -eq "ApprovalCreation-Create"){
+        if($operation -eq "ApprovalCreation_Create"){
             $approverFirstname = $Data.authenticatedUser.givenName
             $approverLastname = $Data.authenticatedUser.sn
             $approverDisplayNameV1 = "$approverLastname, $approverFirstname" 

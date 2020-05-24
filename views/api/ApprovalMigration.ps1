@@ -1,4 +1,4 @@
-if($operation -eq "approvaltakeoverpreview" -or $operation -eq "approvaltakeover" -and $(Test-scupPSRole -Name "helpdesk" -User $Data.authenticatedUser)){
+if($operation -eq "ApprovalMigration_preview" -or $operation -eq "ApprovalMigration_submit" -and $(Test-scupPSRole -Name "helpdesk" -User $Data.authenticatedUser)){
     #Request Information
     $requestorMachine = $Data.Query.submitrequestmachine
     $newMachine = $Data.Query.submitnewmachine
@@ -26,7 +26,7 @@ if($operation -eq "approvaltakeoverpreview" -or $operation -eq "approvaltakeover
             $existingApproval = $newApprovals | Where-Object { $_.ModelName -eq $oldApproval.ModelName -and $_.User -eq $oldApproval.User }
             
             #Check for the action
-            if($operation -eq "approvaltakeoverpreview"){
+            if($operation -eq "ApprovalMigration_preview"){
                 #Only show approved approval requests
                 if($oldApproval.CurrentState -eq 4){
                     "$($OldApproval.User): $($oldApproval.Application)</br>"

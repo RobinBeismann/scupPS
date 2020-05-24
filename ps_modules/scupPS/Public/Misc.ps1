@@ -184,7 +184,7 @@ function Get-GeneratedTable($arr){
     '</table><br/>'
 }
 
-function Get-DataTablesResponse($Operation,$Data,$Start,$Length,$RecordsTotal,$Draw){
+function Get-DataTablesResponse($Operation,$Data,$Start,$Length,$RecordsTotal,$Draw,$AdditionalValues){
     $tbl = [ordered]@{
         draw = $Draw
         recordsTotal = $RecordsTotal
@@ -192,5 +192,34 @@ function Get-DataTablesResponse($Operation,$Data,$Start,$Length,$RecordsTotal,$D
     }
 
     $tbl.data = @($Data)
+
+    if(
+        $AdditionalValues -and 
+        ($AdditionalValues -is [hashtable])
+    ){
+        $tbl = Merge-HashTable -default $tbl -uppend $AdditionalValues
+    }
     return $tbl | ConvertTo-Json
+}
+
+# Function from sonjz on Stackoverflow: https://stackoverflow.com/a/26409818 / https://stackoverflow.com/users/740575/sonjz
+function Merge-HashTable {
+    param(
+        [hashtable] $default, # Your original set
+        [hashtable] $uppend # The set you want to update/append to the original set
+    )
+
+    # Clone for idempotence
+    $default1 = $default.Clone();
+
+    # We need to remove any key-value pairs in $default1 that we will
+    # be replacing with key-value pairs from $uppend
+    foreach ($key in $uppend.Keys) {
+        if ($default1.ContainsKey($key)) {
+            $default1.Remove($key);
+        }
+    }
+
+    # Union both sets
+    return $default1 + $uppend;
 }

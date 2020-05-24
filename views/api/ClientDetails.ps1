@@ -1,4 +1,4 @@
-if($operation -eq "listclientdetails" -and $(Test-scupPSRole -Name "helpdesk" -User $Data.authenticatedUser)){
+if($operation -eq "ClientDetails_submit" -and $(Test-scupPSRole -Name "helpdesk" -User $Data.authenticatedUser)){
     #Request Information
     if(!$requestorMachine){
         $requestorMachine = $Data.Query.submitrequestmachine

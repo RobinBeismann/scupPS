@@ -34,7 +34,7 @@ function calculate(){
         (application != "notset")
     ){                
         var client = new HttpClient();
-        var suburl = (url + '?operation=ApprovalCreation-Preview' + 
+        var suburl = (url + '?operation=ApprovalCreation_Preview' + 
                         '&submitrequestmachine=' + machine + 
                         '&submitrequestapplication=' + application + 
                         '&submitrequestuser=' + user
@@ -69,7 +69,7 @@ function submitData(){
         (application != "notset")
     ){                
         var client = new HttpClient();
-        var suburl = (url + '?operation=ApprovalCreation-Create' + 
+        var suburl = (url + '?operation=ApprovalCreation_Create' + 
                         '&submitrequestmachine=' + machine + 
                         '&submitrequestapplication=' + application + 
                         '&submitrequestuser=' + user

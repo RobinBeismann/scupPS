@@ -2,7 +2,7 @@ $(
     $operation = $Data.Query.operation
     $Data.authenticatedUser = (Get-scupPSAuthUser($Data))
  
-    $requestedOperation = ($operation.Split("-"))[0]
+    $requestedOperation = ($operation.Split("_"))[0]
     #Include Includes    
     try{
         . "$(Get-PodeState -Name "PSScriptRoot")\views\api\$requestedOperation.ps1"

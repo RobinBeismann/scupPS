@@ -1,4 +1,4 @@
-<!-- Item Name: 'List Computer Summary' Item Role: 'helpdesk' -->
+<!-- Item Name: 'List Computers' Item Role: 'helpdesk' -->
 
 <!-- ############################################### Code ################################################# -->
 
@@ -14,7 +14,7 @@
             }
             
             requesttype = "GET";
-            
+
             anHttpRequest.open( requesttype, aUrl, true );            
             anHttpRequest.send( null );
         }
@@ -30,7 +30,7 @@
         ){                
             var client = new HttpClient();
 
-            var suburl = (url + '?operation=listcomputersummary' + 
+            var suburl = (url + '?operation=ClientList_submit' + 
                             '&submitcollection=' + collection
                             );
                             
@@ -45,9 +45,6 @@
             `$('#maindatadiv').html('Please select a device to show data.');
         }
     }
-
-
-    
 </script>
 
 $(
@@ -56,7 +53,7 @@ $(
         @"
         <!-- Form Name -->
         <legend>List Client Summary</legend>
-    
+
         <!-- Old Machine -->
         <label class="control-label" for="dropdown-menu">Collection</label>  
         <select class="form-control input-md" id="collection" onchange="calculate()">
@@ -79,7 +76,6 @@ $(
     }else{
         "You don't have access to this page"
     }
-
 )
 
 <!-- ############################################### End ################################################## -->

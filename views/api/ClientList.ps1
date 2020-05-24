@@ -1,4 +1,4 @@
-if($operation -eq "listcomputers" -and $(Test-scupPSRole -Name "helpdesk" -User $Data.authenticatedUser) -and ($collection = $Data.Query.submitcollection) -and ($collection -in $((Get-scupPSValue -Name "Collection_BrowsingAllowed").Split(";") ))){
+if($operation -eq "ClientList_submit" -and $(Test-scupPSRole -Name "helpdesk" -User $Data.authenticatedUser) -and ($collection = $Data.Query.submitcollection) -and ($collection -in $((Get-scupPSValue -Name "Collection_BrowsingAllowed").Split(";") ))){
     
     #Get Computers
     $query = Invoke-scupCCMSqlQuery -Query "

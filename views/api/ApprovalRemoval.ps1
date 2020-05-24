@@ -1,4 +1,4 @@
-if($operation -eq "approvalclearpreview" -or $operation -eq "approvalclear" -and $(Test-scupPSRole -Name "helpdesk" -User $Data.authenticatedUser)){
+if($operation -eq "ApprovalRemoval_preview" -or $operation -eq "ApprovalRemoval_submit" -and $(Test-scupPSRole -Name "helpdesk" -User $Data.authenticatedUser)){
     $requestorMachine = $Data.Query.submitrequestmachine
     $reason = $Data.Query.submitdeletereason
     Write-Host("Receiving application approvals for $requestorMachine")
@@ -10,11 +10,11 @@ if($operation -eq "approvalclearpreview" -or $operation -eq "approvalclear" -and
         Write-Host("Found old Applications ($($oldApprovals.Application -join ", "))")
         $oldApprovals | ForEach-Object {
             #Check for the action
-            if($operation -eq "approvalclearpreview"){
+            if($operation -eq "ApprovalRemoval_preview"){
                 #Only show approved approval requests
                 "$($_.User): $($_.Application)</br>"
                 
-            }elseif($operation -eq "approvalclear" -and $reason){
+            }elseif($operation -eq "ApprovalRemoval_submit" -and $reason){
                 $reqObjOO = [wmi]"\\$(Get-scupPSValue -Name "SCCM_SiteServer")\$((Get-scupPSValue -Name "SCCM_SiteNamespace")):SMS_UserApplicationRequest.RequestGuid=`"$($_.RequestGuid)`"" #Object for object oriented calls
                 Write-Host("Deleting Approval: $($_.User): $($_.Application)")
                 "Deleting Approval: $($_.User): $($_.Application)</br>"

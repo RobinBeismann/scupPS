@@ -1,4 +1,4 @@
-if($operation -eq "listsoftware" -and $(Test-scupPSRole -Name "helpdesk" -User $Data.authenticatedUser)){
+if($operation -eq "ClientListSoftware_submit" -and $(Test-scupPSRole -Name "helpdesk" -User $Data.authenticatedUser)){
     $requestorMachine = $Data.Query.submitrequestmachine
 
     $query = Invoke-scupCCMSqlQuery -Query "

@@ -33,7 +33,7 @@ function calculate(){
     ){                
         var client = new HttpClient();
 
-        var suburl = (url + '?operation=approvaltakeoverpreview' + 
+        var suburl = (url + '?operation=ApprovalMigration_preview' + 
                         '&submitrequestmachine=' + oldmachine + 
                         '&submitnewmachine=' + newmachine
                         );
@@ -67,7 +67,7 @@ function submitData(){
     ){                
         var client = new HttpClient();
 
-        var suburl = (url + '?operation=approvaltakeover' + 
+        var suburl = (url + '?operation=ApprovalMigration_submit' + 
                         '&submitrequestmachine=' + oldmachine + 
                         '&submitnewmachine=' + newmachine
                         );
