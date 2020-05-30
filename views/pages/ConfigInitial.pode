@@ -132,7 +132,7 @@ input.invalid {
 
     function verify(fieldName){
         var value = document.getElementById(fieldName).value;
-        var suburl = (url + '?operation=setup&fieldName=' + encodeURIComponent(fieldName) + '&fieldValue=' + encodeURIComponent(value));       
+        var suburl = (url + '?operation=ConfigValues_submit&fieldName=' + encodeURIComponent(fieldName) + '&fieldValue=' + encodeURIComponent(value));       
         var client = new HttpClient();
         var field = document.getElementById(fieldName);
         field.style.backgroundColor = "#ADADAD";

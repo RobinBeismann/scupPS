@@ -1,5 +1,5 @@
 if(
-    ($operation -eq "setup") -and
+    ($operation -eq "ConfigValues_submit") -and
     (
         ((Get-ServerReadyness) -eq $false) -or
         (

@@ -16,7 +16,7 @@ function Get-scupPSAuthUser($Data){
             ,[AD_Object_Creation_Time0]		    AS [ADObjectCreationTime]
             ,[CloudUserId]					    AS [CloudUserId]
             ,[Creation_Date0]					AS [Creation_Date]
-            ,[displayName]					    AS [displayName]
+            ,[Full_User_Name0]					AS [displayName]
             ,[Distinguished_Name0]			    AS [DistinguishedName]
             ,[$attrCostcenter]			        AS [$attrCostcenter]
             ,[$attrMCostcenters]			    AS [$attrMCostcenters]

@@ -1,15 +1,13 @@
 if(
-    ($operation -eq "AppRequest-approve") -or
-    ($operation -eq "AppRequest-deny") -or
-    ($operation -eq "AppRequest-revoke")
+    ($operation -eq "AppRequest_approve") -or
+    ($operation -eq "AppRequest_deny") -or
+    ($operation -eq "AppRequest_revoke")
 ){
     #Request Information
     $requestID = $Data.Query.submitrequestid
     $denyreason = $Data.Query.submitdenyreason
 
     $currentDate = [string](Get-Date -Format "yyyy\/MM\/dd hh:MM")
-
-    $localSender = $(Get-scupPSValue -Name "smtpSender").Replace("%SenderDisplayName%","$approverDisplayNameV1 (Approval Portal)")
 
     $reqObj = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "Select * From SMS_UserApplicationRequest where RequestGUID='$requestID'" | Get-CimInstance
     $reqObjRequestor = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "Select * From SMS_R_USER where Sid='$($reqObj.UserSid)'"
@@ -40,14 +38,14 @@ if(
     $softwareTitle = $reqObj.Application
     $requestorMachine = $reqObj.RequestedMachine
     $mailTemplate = $null
+    $localSender = "$approverDisplayNameV1 (Approval Portal)"
 
-    if($operation -eq "AppRequest-approve"){
+    if($operation -eq "AppRequest_approve"){
 
         if($requestID -and $softwareTitle -and $requestorMachine){
             "Approved $softwareTitle for $requestorDisplayNameV1, starting installation on $requestorMachine"
             try{
                 $result = $reqObjOO.Approve("Approved by $approverDisplayNameV1")
-                Invoke-scupPSAppRequestCaching -RequestGuid $requestID
             }catch{
                 $_
             }
@@ -57,14 +55,13 @@ if(
         }else{
             "An error occured while receiving request data."
         }
-    }elseif($operation -eq "AppRequest-deny"){
+    }elseif($operation -eq "AppRequest_deny"){
 
         if($requestID -and $softwareTitle -and $requestorMail -and $requestorMachine){
             "Denied $softwareTitle for $requestorDisplayNameV1."
 
             try{
                 $result = $reqObjOO.Deny("Denied by $approverDisplayNameV1 with the Reason `"$denyreason`"")
-                Invoke-scupPSAppRequestCaching -RequestGuid $requestID
             }catch{
                 $_
             }
@@ -74,14 +71,13 @@ if(
         }else{
             "An error occured while receiving request data."
         }
-    }elseif($operation -eq "AppRequest-revoke"){
+    }elseif($operation -eq "AppRequest_revoke"){
 
         if($requestID -and $softwareTitle -and $requestorMachine){
             "Revoked $softwareTitle for $requestorDisplayNameV1, starting uninstallation on $requestorMachine"
 
             try{
                 $result = $reqObjOO.Deny("Revoked by $approverDisplayNameV1 with the Reason `"$denyreason`"")
-                Invoke-scupPSAppRequestCaching -RequestGuid $requestID
             }catch{
                 $_
             }
@@ -94,7 +90,7 @@ if(
 
     if($mailSubject -and $mailTemplate -and $mailTemplate -ne ""){
         
-        $userText = Get-Content -Path ".\public\Assets\templates\$mailTemplate" -Raw
+        $userText = Get-Content -Path "$(Get-PodeState -Name "PSScriptRoot")\public\Assets\templates\$mailTemplate" -Raw
         $userText = $userText.Replace("%requestorDisplayNameV1%",$requestorDisplayNameV1)
         $userText = $userText.Replace("%requestorDisplayNameV2%",$requestorDisplayNameV2)
         $userText = $userText.Replace("%requestorFirstname%",$requestorFirstname)
@@ -112,7 +108,7 @@ if(
         $userText = Get-HTMLString -Value $userText
 
         if($requestorMail){
-            Send-CustomMailMessage -SmtpServer $(Get-scupPSValue -Name "smtpServer") -from $localSender -ReplyTo $(Get-scupPSValue -Name "smtpReplyTo") -subject $mailSubject -to ($requestorMail,$approverMail) -CC $(Get-scupPSValue -Name "smtpAdditionalRecipient") -body $userText -BodyAsHtml
+            Send-CustomMailMessage -SmtpServer $(Get-scupPSValue -Name "smtpServer") -from $(Get-scupPSValue -Name "smtpSender") -fromDisplayName $localSender -ReplyTo $(Get-scupPSValue -Name "smtpReplyTo") -subject $mailSubject -to ($requestorMail,$approverMail) -CC $(Get-scupPSValue -Name "smtpAdditionalRecipient") -body $userText -BodyAsHtml
         }
     }
 
@@ -251,12 +247,12 @@ if(
                                     #Check if this request is already approved
                                     if($_.request_state -eq 4){
                                         #Switch to revoke
-                                        $btnAction = "AppRequest-revoke"
+                                        $btnAction = "AppRequest_revoke"
                                         $btnDescription = "Revoke"
                                         #Disable approve button
                                         "<script type='text/javascript'>document.getElementById('btn_approve_$($_.request_guid)').disabled = true;</script>"
                                     }else{
-                                        $btnAction = "AppRequest-deny"
+                                        $btnAction = "AppRequest_deny"
                                         $btnDescription = "Deny"
                                     }
                                     

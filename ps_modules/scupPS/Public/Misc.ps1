@@ -54,6 +54,7 @@ function Send-CustomMailMessage(){
     param(
         [string]$smtpServer,
         [string]$from,
+        [string]$fromDisplayName,
         [string]$subject,
         [array]$to,
         [string]$body,
@@ -74,7 +75,11 @@ function Send-CustomMailMessage(){
         }
     }
     
-    $message.From = $from
+    if(!$fromDisplayName){
+        $message.From = $from
+    }else{        
+        $message.From = "$fromDisplayName <$from>"
+    }
     $message.Subject = $subject
     $message.Body = $body
 

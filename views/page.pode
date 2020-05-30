@@ -25,7 +25,7 @@ $(
             ){
                 Use-PodePartialView -Path "pages/$page" -Data $Data
             }else{
-                Use-PodePartialView -Path "pages/myapprovals" -Data $Data
+                Use-PodePartialView -Path "pages/AppRequest" -Data $Data
             }
         }else{
             "Access to this page is denied! You're not member of role $role!"

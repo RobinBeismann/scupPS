@@ -1,5 +1,5 @@
 if(
-    ($operation -eq "roles") -and
+    ($operation -eq "ConfigRoles_submit") -and
     (
         ((Get-ServerReadyness) -eq $true) -and
         (
