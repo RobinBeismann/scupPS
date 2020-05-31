@@ -1,7 +1,8 @@
 ﻿      <!-- Main Footer -->
       <footer class="main-footer">
         <!-- Default to the left -->
-        $(Get-scupPSValue -Name "siteCopyrightText")        
+        $(Get-scupPSValue -Name "siteCopyrightText") <br/>
+        Uptime $( [math]::Round((Get-PodeServerUptime -Total)/1000/60) ) Minutes on $($env:COMPUTERNAME)
       </footer>
     </div>
     <!-- ./wrapper -->

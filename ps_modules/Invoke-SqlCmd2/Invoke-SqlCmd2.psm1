@@ -3,7 +3,6 @@
     {
         $PSScriptRoot = Split-Path $MyInvocation.MyCommand.Path -Parent
     }
-    $ModuleRoot = $PSScriptRoot
 
 #Get public and private function definition files.
     $Public  = @( Get-ChildItem -Path $PSScriptRoot\Public\*.ps1 -ErrorAction SilentlyContinue )
@@ -22,4 +21,4 @@
         }
     }
 
-Export-ModuleMember -Function ($Public | Select -ExpandProperty Basename)
+Export-ModuleMember -Function ($Public | Select-Object -ExpandProperty Basename)

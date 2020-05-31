@@ -18,7 +18,6 @@ function Invoke-scupCCMSqlQuery($Query,$Parameters){
 
 function Add-SqlWhereClause($Query,$Clause){
     $query = $query.ToLower()
-    $insertPos = $null   
     $splitOn = "select", "where", "from", "order by", "group by"
     
     if(

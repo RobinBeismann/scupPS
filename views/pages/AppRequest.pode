@@ -27,7 +27,15 @@
                 searchDelay: 1000,
                 ordering: false,
                 ajax: "/api?operation=AppRequest_Data&ShowApprovals=$($Data.Query['ShowApprovals'])",
-                columns: columns
+                columns: columns,
+                "columnDefs": [
+                    { "width": "10%", "targets": 0 },
+                    { "width": "2%", "targets": 1 },
+                    { "width": "3%", "targets": 2 },
+                    { "width": "15%", "targets": 3 },
+                    { "width": "10%", "targets": 4 },
+                    { "width": "8%", "targets": 6 },
+                ]
             } );
         }
         });

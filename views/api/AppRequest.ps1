@@ -231,8 +231,8 @@ if(
                     [ordered]@{
                         "User" = "<a href='mailto:$($_.user_mail)'>$(Get-HTMLString($_.user_displayname))</a>"
                         "Costcenter" = $_.user_costcenter
-                        "Application" = "$(if($url = Get-IconUrl -CI_ID $_.app_CI_ID -Hash $_.app_icon_hash){ "<img src='$url' style='height: 1.5em;' />   "} )$(Get-HTMLString($_.app_title))"
                         "Machine" = $_.request_machinename
+                        "Application" = "$(if($url = Get-IconUrl -CI_ID $_.app_CI_ID -Hash $_.app_icon_hash){ "<img src='$url' style='height: 1.5em;' />   "} )$(Get-HTMLString($_.app_title))"
                         "Price" = Get-HTMLString($_.app_description)
                         "Comment" = Get-HTMLString($_.request_comments)
                         "Actions" = $(                                                             
