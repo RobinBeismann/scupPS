@@ -103,7 +103,7 @@ function Get-scupPSDefaultValues(){
     }
 }
 
-function Get-scupPSValue($Name){
+function Get-scupPSValue([string]$Name,[Switch]$IgnoreCache){
     $cachedItem = $null
     if(!($Cache = Get-PodeState -Name "ConfigCache" -ErrorAction SilentlyContinue)){
         Set-PodeState -Name "ConfigCache" -Value @{}
@@ -121,8 +121,9 @@ function Get-scupPSValue($Name){
             "
         )    
     #Cached Value    
-    }elseif(        
-        $cachedItem = $Cache.$Name
+    }elseif(
+        ($cachedItem = $Cache.$Name) -and
+        !$IgnoreCache
     ){
         #Write-Host("Returning Cache Value $cachedItem for Property $Name")
         return $cachedItem

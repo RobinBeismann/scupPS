@@ -1,6 +1,6 @@
 try{
     #Try to load the local module
-    Import-Module -Name "$PSScriptRoot\pode\Pode.psm1" -ErrorAction Stop
+    Import-Module -Name "$PSScriptRoot\ps_modules\pode\Pode.psm1" -ErrorAction Stop
     Write-Host("Loaded local Pode module.")
 }catch{
     #Fail back to the system module
@@ -9,10 +9,6 @@ try{
     }
     Import-Module -Name "Pode"
     Write-Host("Loaded system Pode module.")
-}
-#Install MSSQL Module
-if(!(Get-Module -Name 'Sqlserver' -ListAvailable)){
-    Install-Module -Scope CurrentUser -Name 'Sqlserver' -Confirm:$false -Force
 }
 
 Start-PodeServer -Threads (Get-CimInstance -ClassName "Win32_Processor" | Select-Object -ExpandProperty NumberOfLogicalProcessors) -ScriptBlock {
@@ -32,30 +28,46 @@ Start-PodeServer -Threads (Get-CimInstance -ClassName "Win32_Processor" | Select
 
     #Generate Session Secret and store it
     try{
-        $state = Restore-PodeState -Path ".\states.json" 
+        if(
+            (Test-Path -Path "$PSScriptRoot\states.json") -and
+            (Get-Item -Path "$PSScriptRoot\states.json").Length -eq 0
+        ){
+            Remove-Item -Path "$PSScriptRoot\states.json" -Confirm:$false -Force
+        }
+        $state = Restore-PodeState -Path "$PSScriptRoot\states.json" 
     }catch{
         Write-Host("Unable to read states")
     }
-    if(!(Test-PodeState -Name "sessionSecret")){        
+    
+    if(!(Test-PodeState -Name "sessionSecret")){       
+        Write-Host("Generating new session secret..") 
         $secretGen = -join ((65..90) + (97..122) | Get-Random -Count 30 | % {[char]$_})
         Set-PodeState -Name "sessionSecret" -Value $secretGen
         Save-PodeState -Path ".\states.json"
     }
 
+    #Save current directory as Pode State
+    Set-PodeState -Name "PSScriptRoot" -Value $PSScriptRoot
+
     #Load SQL Module
+    Write-Host("Loading 'Invoke-SqlCmd2' Module..")
     Import-PodeModule -Path './ps_modules/Invoke-SqlCmd2/Invoke-SqlCmd2.psm1' -Now
     #Load scupPS Module
+    Write-Host("Loading 'scupPS' Module..")
     Import-PodeModule -Path './ps_modules/scupPS/scupPS.psm1' -Now
     #Set SQL Parameters
-    Set-PodeState -Name "sqlInstance" -Value ""    
-    Set-PodeState -Name "sqlDB" -Value ""
+    Set-PodeState -Name "sqlInstance" -Value "SFLASCCMAPP01"    
+    Set-PodeState -Name "sqlDB" -Value "scupPS_fla_01_test"
     Write-Host("DB Version: " + (Invoke-scupPSSqlQuery -Query "SELECT * FROM db WHERE db_name = 'db_version'").db_value)
     #Upgrade Database
-    Use-PodeScript -Path "$(Get-PodeState -Name "PSScriptRoot")\views\includes\databaseupgrade.ps1"
+    Write-Host("Invoking database upgrades if required..")
+    Use-PodeScript -Path "$PSScriptRoot\views\includes\databaseupgrade.ps1"
         
     #Authentication 
+    Write-Host("Enabling Session Middleware..")
     Enable-PodeSessionMiddleware -Secret (Get-PodeState -Name "sessionSecret") -Duration 120 -Extend
     
+    Write-Host("Testing for IIS..")
     if(Test-PodeIsIIS){
         #Running as IIS Sub Process, use Windows Auth
         Write-Host("Using IIS Authentication")
@@ -81,9 +93,6 @@ Start-PodeServer -Threads (Get-CimInstance -ClassName "Win32_Processor" | Select
         }
         $Auth = Get-PodeAuthMiddleware -Name 'Login'
     }
-    
-    #Save current directory as Pode State
-    Set-PodeState -Name "PSScriptRoot" -Value $PSScriptRoot
 
     #Routes
     Write-Host("Server: Adding 'Index' Route..")
@@ -102,6 +111,12 @@ Start-PodeServer -Threads (Get-CimInstance -ClassName "Win32_Processor" | Select
     Add-PodeRoute -Method Get -Path '/api' -Middleware $Auth -ScriptBlock {
         param($Data)               
         Write-PodeViewResponse -Path 'api' -Data $Data
+    }
+
+    Write-Host("Server: Adding 'healthcheck' Route..")
+    Add-PodeRoute -Method Get -Path '/healthcheck' -ScriptBlock {
+        Write-Host("Answering Alive Request on /healthcheck")
+        Write-PodeTextResponse -Value '200 alive'
     }
 
     #Include Includes    

@@ -1,11 +1,10 @@
 function Invoke-scupPSJobMasterElection(){
-    . "$(Get-PodeState -Name "PSScriptRoot")\views\includes\lib\logging.ps1"
-    
+
     if(
         #No heartbeat
-        !($heartbeat = Get-scupPSValue -Name "jobMasterHeartbeat") -or
+        !($heartbeat = Get-scupPSValue -Name "jobMasterHeartbeat" -IgnoreCache) -or
         #No current master
-        !($curMaster = Get-scupPSValue -Name "jobMaster") -or        
+        !($curMaster = Get-scupPSValue -Name "jobMaster" -IgnoreCache) -or        
         #Other host did not set a heartbeat for over two minutes
         ($heartbeat | Get-Date) -lt (Get-Date).AddMinutes(-2)
     ){
@@ -13,11 +12,11 @@ function Invoke-scupPSJobMasterElection(){
         Set-scupPSValue -Name "jobMaster" -Value $env:COMPUTERNAME
         Set-scupPSValue -Name "jobMasterHeartbeat" -Value ([string](Get-Date))
     }else{
-        Write-scupPSLog("Cluster: Current Master is $env:COMPUTERNAME, heartbeat '$heartbeat' is recent enough - not re-electing.")
+        Write-scupPSLog("Cluster: Current Master is $curMaster, heartbeat '$heartbeat' is recent enough - not re-electing.")
     }
 
     if(
-        ($curMaster = Get-scupPSValue -Name "jobMaster") -and
+        ($curMaster = Get-scupPSValue -Name "jobMaster" -IgnoreCache) -and
         ($curMaster -eq $env:COMPUTERNAME)
     ){
         Set-scupPSValue -Name "jobMasterHeartbeat" -Value ([string](Get-Date))
@@ -28,10 +27,10 @@ function Invoke-scupPSJobMasterElection(){
 function Get-scupPSJobMaster(){
     $master = $false
     try{
-        if(!(Get-scupPSValue -Name "jobMaster")){
+        if(!(Get-scupPSValue -Name "jobMaster" -IgnoreCache)){
             Invoke-scupPSJobMasterElection
         }
-        $master = (Get-scupPSValue -Name "jobMaster")
+        $master = (Get-scupPSValue -Name "jobMaster" -IgnoreCache)
     }catch{
         Write-Host("Error on Get-scupPSJobMaster: $_")
     }
@@ -40,10 +39,10 @@ function Get-scupPSJobMaster(){
 function Test-scupPSJobMaster(){
     $res = $false
     try{
-        if(!(Get-scupPSValue -Name "jobMaster")){
+        if(!(Get-scupPSValue -Name "jobMaster" -IgnoreCache)){
             Invoke-scupPSJobMasterElection
         }
-        $res = (Get-scupPSValue -Name "jobMaster") -eq $env:COMPUTERNAME
+        $res = (Get-scupPSValue -Name "jobMaster" -IgnoreCache) -eq $env:COMPUTERNAME
     }catch{
         Write-Host("Error on Test-scupPSJobMaster: $_")
     }

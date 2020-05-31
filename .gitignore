@@ -7,5 +7,5 @@
 logs/*
 states.json
 db/db.sqlite
-pode/*
+ps_modules/pode/*
 public/temp/*.png
