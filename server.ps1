@@ -56,8 +56,6 @@ Start-PodeServer -Threads (Get-CimInstance -ClassName "Win32_Processor" | Select
     Write-Host("Loading 'scupPS' Module..")
     Import-PodeModule -Path './ps_modules/scupPS/scupPS.psm1' -Now
     #Set SQL Parameters
-    Set-PodeState -Name "sqlInstance" -Value "SFLASCCMAPP01"    
-    Set-PodeState -Name "sqlDB" -Value "scupPS_fla_01_test"
     Write-Host("DB Version: " + (Invoke-scupPSSqlQuery -Query "SELECT * FROM db WHERE db_name = 'db_version'").db_value)
     #Upgrade Database
     Write-Host("Invoking database upgrades if required..")
