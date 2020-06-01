@@ -2,12 +2,6 @@
 
 <!-- ############################################### Code ################################################# -->
 
-
-</script>
-<link rel="stylesheet" type="text/css" href="assets/datatables/datatables.min.css"/>
-<script type="text/javascript" src="assets/datatables/datatables.min.js"></script>
-<script type="text/javascript" src="assets/scupPS/scupPS.js"></script>
-
 <script>
     var columns = [];
 

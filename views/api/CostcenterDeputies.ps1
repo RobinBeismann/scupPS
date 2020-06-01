@@ -49,6 +49,10 @@ if(
         }
         #Case 3: User is admin -> add no further filter
 
+        $additionalClauses += "value != '#'"
+        $additionalClauses += "value != 'admin'"
+        $additionalClauses += "value != 'cleared'"
+
         #If datatablesJS sends a search value, add it to the SQL Query
         if($search = $Data.Query.'search[value]'){
             $additionalClauses += "
@@ -56,13 +60,12 @@ if(
                 LOWER(value) LIKE LOWER(@Search)
             "
         }
-
         #Add our query clauses to the existing statements
         $additionalClauses | Foreach-Object {
             $qMain        = Add-SqlWhereClause -Query $qMain -Clause $_
             $qMainCount   = Add-SqlWhereClause -Query $qMainCount -Clause $_
         }
-
+        
         #Add a filter for the Range
         $qMain += "
             ORDER BY value
