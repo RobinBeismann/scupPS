@@ -31,7 +31,7 @@ $(
             "Access to this page is denied! You're not member of role $role!"
         }
     }else{
-        Use-PodePartialView -Path "pages/config_initial" -Data $Data
+        Use-PodePartialView -Path "pages/ConfigInitial" -Data $Data
     }
 )
 

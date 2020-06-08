@@ -1,9 +1,14 @@
-function Invoke-scupPSSqlQuery($Query,$Parameters){    
+function Invoke-scupPSSqlQuery($Query,$Parameters,[Switch]$ParseGo){    
     if(!$Parameters){
         $Parameters = @{}
     }
+    $additionalParam = @{}
+    if($ParseGo){
+        $additionalParam['ParseGo'] = $true
+    }
+
     return (
-        Invoke-Sqlcmd2 -ServerInstance (Get-PodeState -Name "sqlInstance") -Database (Get-PodeState -Name "sqlDB") -SqlParameters $Parameters -ErrorAction Stop -Query $Query
+        Invoke-Sqlcmd2 -ServerInstance (Get-PodeState -Name "sqlInstance") -Database (Get-PodeState -Name "sqlDB") -SqlParameters $Parameters -ErrorAction Stop -Query $Query @additionalParam
     )
 }
 

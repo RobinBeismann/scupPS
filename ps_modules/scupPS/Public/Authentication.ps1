@@ -1,4 +1,4 @@
-function Get-scupPSAuthUser($Data){
+﻿function Get-scupPSAuthUser($Data){
     #Get values and return fake valid ones incase they were not yet set
     if(!($attrMCostcenters = Get-scupPSValue -Name "Attribute_managedcostCenters")){
         $attrMCostcenters = "ResourceID"
@@ -60,6 +60,7 @@ function Get-scupPSAuthUser($Data){
     "
     
     if(
+        ((Get-ServerReadyness) -eq $false) -or
         !($Data.Auth.User.DistinguishedName) -or
         !($AuthenticatedUser = Invoke-scupCCMSqlQuery -Query $userQuery -Parameters @{ distinguishedName = ($Data.Auth.User.DistinguishedName) })
     ){

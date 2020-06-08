@@ -1,4 +1,4 @@
-function Get-CMAppApprovalHistory($requestObject){
+﻿function Get-CMAppApprovalHistory($requestObject){
     ($requestObject | Get-CimInstance).RequestHistory | ForEach-Object {
     
         [PSCustomObject]@{

@@ -45,7 +45,7 @@ if(
             !($isAdmin = Test-scupPSRole -Name "helpdesk" -User $Data.authenticatedUser) -and
             !$managedCostCenters
         ){
-            #tbd, inform user that he has nothing to manage
+            return;
         }
         #Case 3: User is admin -> add no further filter
 
