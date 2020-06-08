@@ -1,0 +1,4 @@
+{
+    "sqlInstance":  "<scupPS SQL Database Instance Name>",
+    "sqlDB":  "<scupPS SQL Database Database Name>"
+}

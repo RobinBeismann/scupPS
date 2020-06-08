@@ -9,3 +9,4 @@ states.json
 db/db.sqlite
 ps_modules/pode/*
 public/temp/*.png
+config.json

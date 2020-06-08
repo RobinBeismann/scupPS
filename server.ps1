@@ -25,6 +25,15 @@ Start-PodeServer -Threads (Get-CimInstance -ClassName "Win32_Processor" | Select
 
     #View Engine
     Set-PodeViewEngine -Type Pode
+    if(!(Test-Path -Path "$PSScriptRoot\config.json")){
+        Write-Host("Unable to find Config!")
+        exit 1;
+    }else{
+        #Set SQL Parameters
+        $config = Get-Content -Path "$PSScriptRoot\config.json" | ConvertFrom-Json
+        Set-PodeState -Name "sqlInstance" -Value $config.sqlInstance  
+        Set-PodeState -Name "sqlDB" -Value $config.sqlDB
+    }
 
     #Generate Session Secret and store it
     try{
@@ -34,14 +43,14 @@ Start-PodeServer -Threads (Get-CimInstance -ClassName "Win32_Processor" | Select
         ){
             Remove-Item -Path "$PSScriptRoot\states.json" -Confirm:$false -Force
         }
-        $state = Restore-PodeState -Path "$PSScriptRoot\states.json" 
+        $null = Restore-PodeState -Path "$PSScriptRoot\states.json" 
     }catch{
         Write-Host("Unable to read states")
     }
     
     if(!(Test-PodeState -Name "sessionSecret")){       
         Write-Host("Generating new session secret..") 
-        $secretGen = -join ((65..90) + (97..122) | Get-Random -Count 30 | % {[char]$_})
+        $secretGen = -join ((65..90) + (97..122) | Get-Random -Count 30 | ForEach-Object {[char]$_})
         Set-PodeState -Name "sessionSecret" -Value $secretGen
         Save-PodeState -Path ".\states.json"
     }
@@ -55,7 +64,6 @@ Start-PodeServer -Threads (Get-CimInstance -ClassName "Win32_Processor" | Select
     #Load scupPS Module
     Write-Host("Loading 'scupPS' Module..")
     Import-PodeModule -Path './ps_modules/scupPS/scupPS.psm1' -Now
-    #Set SQL Parameters
     Write-Host("DB Version: " + (Invoke-scupPSSqlQuery -Query "SELECT * FROM db WHERE db_name = 'db_version'").db_value)
     #Upgrade Database
     Write-Host("Invoking database upgrades if required..")
