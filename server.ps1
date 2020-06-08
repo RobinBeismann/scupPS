@@ -15,25 +15,16 @@ Start-PodeServer -Threads (Get-CimInstance -ClassName "Win32_Processor" | Select
     Add-PodeEndpoint -Address 127.0.0.1 -Protocol Http
 
     #Logging
-    New-PodeLoggingMethod -File -Path ./logs -Name "$($env:COMPUTERNAME)_errors" -MaxSize "100MB" | Enable-PodeErrorLogging
-    New-PodeLoggingMethod -File -Path ./logs -Name "$($env:COMPUTERNAME)_request" -MaxSize "100MB" | Enable-PodeRequestLogging
-    New-PodeLoggingMethod -File -Path ./logs -Name "$($env:COMPUTERNAME)_feed" -MaxSize "100MB" | Add-PodeLogger -Name 'Feed' -ScriptBlock {
+    New-PodeLoggingMethod -File -Path ./logs -Name "$($env:COMPUTERNAME)_errors" -MaxSize "1000" | Enable-PodeErrorLogging
+    New-PodeLoggingMethod -File -Path ./logs -Name "$($env:COMPUTERNAME)_request" -MaxSize "1000" | Enable-PodeRequestLogging
+    New-PodeLoggingMethod -File -Path ./logs -Name "$($env:COMPUTERNAME)_feed" -MaxSize "1000" | Add-PodeLogger -Name 'Feed' -ScriptBlock {
         param($arg)        
         $string = ($arg.GetEnumerator() | ForEach-Object { $_.Name + ": " + $_.Value }) -join "; "
         return $string
     } -ArgumentList $arg
 
     #View Engine
-    Set-PodeViewEngine -Type Pode
-    if(!(Test-Path -Path "$PSScriptRoot\config.json")){
-        Write-Host("Unable to find Config!")
-        exit 1;
-    }else{
-        #Set SQL Parameters
-        $config = Get-Content -Path "$PSScriptRoot\config.json" | ConvertFrom-Json
-        Set-PodeState -Name "sqlInstance" -Value $config.sqlInstance  
-        Set-PodeState -Name "sqlDB" -Value $config.sqlDB
-    }
+    Set-PodeViewEngine -Type pode
 
     #Generate Session Secret and store it
     try{
@@ -55,6 +46,17 @@ Start-PodeServer -Threads (Get-CimInstance -ClassName "Win32_Processor" | Select
         Save-PodeState -Path ".\states.json"
     }
 
+    #Load DB Config
+    if(!(Test-Path -Path "$PSScriptRoot\config.json")){
+        Write-Host("Unable to find Config!")
+        exit 1;
+    }else{
+        #Set SQL Parameters
+        $config = Get-Content -Path "$PSScriptRoot\config.json" | ConvertFrom-Json
+        Set-PodeState -Name "sqlInstance" -Value $config.sqlInstance  
+        Set-PodeState -Name "sqlDB" -Value $config.sqlDB
+    }
+
     #Save current directory as Pode State
     Set-PodeState -Name "PSScriptRoot" -Value $PSScriptRoot
 
@@ -64,6 +66,33 @@ Start-PodeServer -Threads (Get-CimInstance -ClassName "Win32_Processor" | Select
     #Load scupPS Module
     Write-Host("Loading 'scupPS' Module..")
     Import-PodeModule -Path './ps_modules/scupPS/scupPS.psm1' -Now
+    #Create Database Schema if not exist
+    Write-Host("Creating DB Schema if not exist at $(Get-PodeState -Name "sqlInstance") in $(Get-PodeState -Name "sqlDB")..")
+    Invoke-scupPSSqlQuery -ParseGo -Query "
+        IF NOT EXISTS (SELECT 1
+            FROM sys.tables t
+                JOIN sys.schemas s ON t.schema_id = s.schema_id
+            WHERE s.[name] = N'dbo'
+            AND t.name = N'db'
+            AND t.type = 'U')
+        CREATE TABLE [dbo].[db](
+        [db_name] [nchar](10) NULL,
+        [db_value] [nchar](10) NULL
+        ) ON [DATA]
+        GO
+
+        IF NOT EXISTS (SELECT 1
+            FROM [dbo].[db]
+            WHERE [db].[db_name] = N'db_version')
+        INSERT INTO [dbo].[db]
+                ([db_name]
+                ,[db_value])
+        VALUES
+                ('db_version',
+                '1');
+        GO
+    "
+    Write-Host("Checking DB Version..")
     Write-Host("DB Version: " + (Invoke-scupPSSqlQuery -Query "SELECT * FROM db WHERE db_name = 'db_version'").db_value)
     #Upgrade Database
     Write-Host("Invoking database upgrades if required..")
