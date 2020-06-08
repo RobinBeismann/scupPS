@@ -9,6 +9,11 @@ if(
 
     $currentDate = [string](Get-Date -Format "yyyy\/MM\/dd hh:MM")
 
+    if(!(Test-IsGuid -ObjectGuid $requestID)){
+        "Invalid GUID submitted!"
+        return;
+    }
+
     $reqObj = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "Select * From SMS_UserApplicationRequest where RequestGUID='$requestID'" | Get-CimInstance
     $reqObjRequestor = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "Select * From SMS_R_USER where Sid='$($reqObj.UserSid)'"
     $reqObjApprover = $Data.authenticatedUser
@@ -18,7 +23,7 @@ if(
     if(!(Test-ApproveCompetence -User $reqObjRequestor -Manager $reqObjApprover)){
         "You're not allowed to approve this request!"
         #Remove the operation so we're not continuing
-        $operation = $null
+        return;
     }
 
     #Requestor Information
@@ -57,7 +62,7 @@ if(
         }
     }elseif($operation -eq "AppRequest_deny"){
 
-        if($requestID -and $softwareTitle -and $requestorMail -and $requestorMachine){
+        if($requestID -and $softwareTitle -and $requestorMachine){
             "Denied $softwareTitle for $requestorDisplayNameV1."
 
             try{

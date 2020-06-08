@@ -36,7 +36,7 @@ if($operation -eq "ApprovalCreation_Preview" -or $operation -eq "ApprovalCreatio
                 $args = @{ 
                     ApplicationID = $requestorApplication
                     AutoInstall = $true
-                    ClientGUID = $requestorMachineGuid
+                    ClientGUID = [string]$requestorMachine.SMSUniqueIdentifier
                     Comments = $comment
                     Username = $requestorUserObj.UniqueUserName
                 };

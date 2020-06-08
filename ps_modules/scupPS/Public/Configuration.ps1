@@ -129,7 +129,7 @@ function Get-scupPSValue([string]$Name,[Switch]$IgnoreCache){
         return $cachedItem
     }elseif(
         #Not cached, retrieve it from DB
-        $res = Invoke-scupPSSqlQuery -Query "SELECT [config_value] AS Value FROM [dbo].[config] WHERE [config_name] = '$Name'"
+        $res = Invoke-scupPSSqlQuery -Query "SELECT [config_value] AS Value FROM [dbo].[config] WHERE [config_name] = @Name" -Parameters @{ Name = $Name }
     ){
         $null = $cache | Add-Member -NotePropertyName $Name -NotePropertyValue $res.Value -Force
         #Write-Host("Returning DB Value $($res.Value) for Property $Name")
@@ -145,23 +145,33 @@ function Get-scupPSValue([string]$Name,[Switch]$IgnoreCache){
 }
 
 function Set-scupPSValue($Name,$Value){
-    if($Name -and $Value){
-        Invoke-scupPSSqlQuery -Query "
-            UPDATE [dbo].[config]
-            SET 
-                [config_value] = '$Value'
-            WHERE
-                [config_name] = '$Name'
-            IF @@ROWCOUNT = 0
-            INSERT INTO [dbo].[config]
-                (
-                    [config_name],
-                    [config_value]
-                ) VALUES (
-                    '$Name',
-                    '$Value'
-                )
-        "
+    if(
+        ($Value -is [hashtable]) -or
+        ([String]$Value -like "*.Hashtable*")
+    ){
+        Write-scupPSLog("Not writing $Value for $Name to Database, invalid format!")
+    }else{
+        if($Name -and $Value){
+            Invoke-scupPSSqlQuery -Query "
+                UPDATE [dbo].[config]
+                SET 
+                    [config_value] = @Value
+                WHERE
+                    [config_name] = @Name
+                IF @@ROWCOUNT = 0
+                INSERT INTO [dbo].[config]
+                    (
+                        [config_name],
+                        [config_value]
+                    ) VALUES (
+                        @Name,
+                        @Value
+                    )
+            " -Parameters @{
+                Name = $Name
+                Value = $Value
+            }
+        } 
+        $null = Set-PodeState -Name "ConfigCache" -Value @{}
     }
-    $null = Set-PodeState -Name "ConfigCache" -Value @{}
 }

@@ -53,7 +53,7 @@ if(
         if($search = $Data.Query.'search[value]'){
             $additionalClauses += "
                 LOWER([users].Full_User_Name0) LIKE LOWER(@Search) OR
-                LOWER(value) LIKE LOWER(@Search)
+                LOWER([users].$attrCostCenter) LIKE LOWER(@Search)
             "
         }
 
@@ -62,7 +62,6 @@ if(
             $qMain        = Add-SqlWhereClause -Query $qMain -Clause $_
             $qMainCount   = Add-SqlWhereClause -Query $qMainCount -Clause $_
         }
-
         #Add a filter for the Range
         $qMain += "
             ORDER BY user_displayname
