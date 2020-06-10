@@ -1,21 +1,8 @@
-function Get-CMAppApprovalHistory($requestObject){
-    ($requestObject | Get-CimInstance).RequestHistory | ForEach-Object {
-    
-        [PSCustomObject]@{
-            Comments = $_.Comments
-            Date = $_.ModifiedDate
-            State = $_.State
-        }
-    } | Sort-Object -Property Date
-}
-
-
-#Request Information
-$requestorMachineName = $Data.Query.submitrequestmachine
-$requestorUser = $Data.Query.submitrequestuser
-$requestorApplication = $Data.Query.submitrequestapplication
-
-if($operation -eq "approvalcreationpreview" -or $operation -eq "approvalcreation" -and $(Test-scupPSRole -Name "helpdesk" -User $authenticatedUser)){
+if($operation -eq "ApprovalCreation_Preview" -or $operation -eq "ApprovalCreation_Create" -and $(Test-scupPSRole -Name "helpdesk" -User $Data.authenticatedUser)){
+    #Request Information
+    $requestorMachineName = $Data.Query.submitrequestmachine
+    $requestorUser = $Data.Query.submitrequestuser
+    $requestorApplication = $Data.Query.submitrequestapplication
     
     $requestorMachine = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "Select * From SMS_R_SYSTEM WHERE Name='$requestorMachineName'" | Get-CimInstance
     $existingApproval = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "Select * From SMS_UserApplicationRequest WHERE RequestedMachine='$requestorMachineName' AND ModelName = '$requestorApplication'" | Get-CimInstance
@@ -28,15 +15,15 @@ if($operation -eq "approvalcreationpreview" -or $operation -eq "approvalcreation
         ($requestorMachineGuid = $requestorMachine.SMSUniqueIdentifier)
     ){
         if(
-            ($operation -eq "approvalcreationpreview") -and 
+            ($operation -eq "ApprovalCreation_Preview") -and 
             ($existingApproval | Where-Object { $_.CurrentState -eq 4 }) 
         ){
             "This approval already exists."
         }
         
-        if($operation -eq "approvalcreation"){
-            $approverFirstname = $authenticatedUser.givenName
-            $approverLastname = $authenticatedUser.sn
+        if($operation -eq "ApprovalCreation_Create"){
+            $approverFirstname = $Data.authenticatedUser.givenName
+            $approverLastname = $Data.authenticatedUser.sn
             $approverDisplayNameV1 = "$approverLastname, $approverFirstname" 
             $comment = "Pre-approved by $($approverDisplayNameV1)."
             
@@ -49,7 +36,7 @@ if($operation -eq "approvalcreationpreview" -or $operation -eq "approvalcreation
                 $args = @{ 
                     ApplicationID = $requestorApplication
                     AutoInstall = $true
-                    ClientGUID = $requestorMachineGuid
+                    ClientGUID = [string]$requestorMachine.SMSUniqueIdentifier
                     Comments = $comment
                     Username = $requestorUserObj.UniqueUserName
                 };

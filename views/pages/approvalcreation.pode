@@ -1,17 +1,5 @@
 <!-- Item Name: 'Approval Creation' Item Role: 'helpdesk' -->
 
-<!-- ############################################### Includes ############################################# -->
-$( 
-    #Include Config
-    . ".\views\includes\core\config.ps1"
-    . ".\views\includes\core\userLib.ps1"
-    
-    #Include Includes    
-    Get-ChildItem -Path "views\includes\lib" -File -Include "*.ps1" -Recurse | ForEach-Object {
-        "<!-- Including: $($_.FullName) -->"
-        . $_.FullName
-    }
-)
 <!-- ############################################### Code ################################################# -->
 
 
@@ -46,7 +34,7 @@ function calculate(){
         (application != "notset")
     ){                
         var client = new HttpClient();
-        var suburl = (url + '?operation=approvalcreationpreview' + 
+        var suburl = (url + '?operation=ApprovalCreation_Preview' + 
                         '&submitrequestmachine=' + machine + 
                         '&submitrequestapplication=' + application + 
                         '&submitrequestuser=' + user
@@ -81,7 +69,7 @@ function submitData(){
         (application != "notset")
     ){                
         var client = new HttpClient();
-        var suburl = (url + '?operation=approvalcreation' + 
+        var suburl = (url + '?operation=ApprovalCreation_Create' + 
                         '&submitrequestmachine=' + machine + 
                         '&submitrequestapplication=' + application + 
                         '&submitrequestuser=' + user
@@ -102,7 +90,7 @@ function submitData(){
 </script>
 
 $(
-    if($(Test-scupPSRole -Name "helpdesk" -User $authenticatedUser)){
+    if($(Test-scupPSRole -Name "helpdesk" -User $Data.authenticatedUser)){
         #Get Computers
 		$WhereClause = $null
 		$((Get-scupPSValue -Name "Collection_BrowsingAllowed").Split(";")) | ForEach-Object {

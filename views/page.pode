@@ -1,15 +1,9 @@
-<!-- ############################################### Includes ############################################# -->
-$( 
-    #Include Config
-    . ".\views\includes\core\config.ps1"
-    . ".\views\includes\core\userLib.ps1"
-)
 <!-- ############################################### Header ############################################### -->
-$( 
-)
 <!-- ############################################### Main ################################################# -->
 $(
     $Data.LoadedUsingPageLoader = $true
+    $Data.authenticatedUser = (Get-scupPSAuthUser($Data))
+    
     if( 
         (Get-ServerReadyness) -eq $true
     ){
@@ -23,7 +17,7 @@ $(
             !$navItem.Value.role -or
             (
                 ($role = $navItem.Value.role) -and
-                (Test-scupPSRole -Name $role -User $authenticatedUser)
+                (Test-scupPSRole -Name $role -User $Data.authenticatedUser)
             )
         ){
             if(
@@ -31,13 +25,14 @@ $(
             ){
                 Use-PodePartialView -Path "pages/$page" -Data $Data
             }else{
-                Use-PodePartialView -Path "pages/myapprovals" -Data $Data
+                Use-PodePartialView -Path "pages/AppRequest" -Data $Data
             }
         }else{
             "Access to this page is denied! You're not member of role $role!"
         }
     }else{
-        Use-PodePartialView -Path "pages/config_initial" -Data $Data
+        Use-PodePartialView -Path "pages/ConfigInitial" -Data $Data
     }
 )
+
 <!-- ############################################### Footer ############################################### -->

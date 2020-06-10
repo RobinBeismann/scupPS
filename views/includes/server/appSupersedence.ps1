@@ -5,19 +5,7 @@ Add-PodeSchedule -Name 'migrateSupersededApprovals' -Cron '@hourly' -OnStart -Sc
 
     #Loading config.ps1
     Write-Host("Server: Loading 'config.ps1'..")
-    . ".\views\includes\core\config.ps1"
-    . ".\views\includes\lib\logging.ps1"
 
-    function Get-CMAppApprovalHistory($requestObject){
-        ($requestObject | Get-CimInstance).RequestHistory | ForEach-Object {
-        
-            [PSCustomObject]@{
-                Comments = $_.Comments
-                Date = $_.ModifiedDate
-                State = $_.State
-            }
-        } | Sort-Object -Property Date
-    }
     #Build a list of superseeding apps
     $SuperseedingApps = @{}
     Get-CimInstance -namespace $(Get-scupPSValue -Name "SCCM_SiteNamespace") -computer $(Get-scupPSValue -Name "SCCM_SiteServer") -query "

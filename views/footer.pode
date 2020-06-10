@@ -1,20 +1,10 @@
-﻿$( 
-    #Include Config
-    . ".\views\includes\core\config.ps1"
-)
-      <!-- Main Footer -->
+﻿      <!-- Main Footer -->
       <footer class="main-footer">
         <!-- Default to the left -->
-        $(Get-scupPSValue -Name "siteCopyrightText")        
+        $(Get-scupPSValue -Name "siteCopyrightText") <br/>
+        Uptime $( [math]::Round((Get-PodeServerUptime -Total)/1000/60) ) Minutes on $($env:COMPUTERNAME)
       </footer>
     </div>
     <!-- ./wrapper -->
-
-    <!-- REQUIRED SCRIPTS -->
-
-    <!-- Bootstrap 4 -->
-    <script src="assets/bootstrap/js/bootstrap.bundle.min.js"></script>
-    <!-- AdminLTE App -->
-    <script src="assets/AdminLTE/js/adminlte.min.js"></script>
   </body>
 </html>

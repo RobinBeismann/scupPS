@@ -1,30 +1,44 @@
 <!-- Item Name: 'Approval Admins'  Item Role: 'helpdesk' -->
 
-<!-- ############################################### Includes ############################################# -->
-$( 
-    #Include Config
-    . ".\views\includes\core\config.ps1"
-    . ".\views\includes\core\userLib.ps1"
-    
-    #Include Includes    
-    Get-ChildItem -Path "views\includes\lib" -File -Include "*.ps1" -Recurse | ForEach-Object {
-        "<!-- Including: $($_.FullName) -->"
-        . $_.FullName
-    }
-)
 <!-- ############################################### Code ################################################# -->
+<script>
+    var columns = [];
 
-$(
-    if($(Test-scupPSRole -Name "helpdesk" -User $authenticatedUser)){
-
-    "The following users can use the administrative portal:"
-    $doubleEscapedGroupName = (Get-scupPSRole -Name "helpdesk").Replace("\","\\")
-    Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "SELECT * FROM SMS_R_User where UserGroupName = '$doubleEscapedGroupName'" | Sort-Object -Property "FullUserName" | ForEach-Object {
-        "<br/>$($_.FullUserName)"
+    function getDT() {
+        `$.ajax({
+        url: "/api?operation=ApprovalAdmins_Headers",
+        success: function (data) {
+            data = JSON.parse(data);
+            columnNames = Object.keys(data.data[0]);
+            for (var i in columnNames) {
+            columns.push({data: columnNames[i], 
+                        title: capitalizeFirstLetter(columnNames[i])});
+            }
+            console.log(columnNames);
+            `$('#datatable').DataTable( {
+                processing: true,
+                serverSide: true,
+                searchDelay: 1000,
+                ordering: false,
+                ajax: "/api?operation=ApprovalAdmins_Data",
+                columns: columns
+            } );
+        }
+        });
     }
 
-    }else{
-        "You don't have any costcenters to manage."
+    function capitalizeFirstLetter(string) {
+        return string.charAt(0).toUpperCase() + string.slice(1);
     }
-)
+
+    `$(document).ready(function() {
+        getDT();    
+    } );
+
+</script>
+
+<div class="w-100 p-3">
+    <table id="datatable" class="table table-striped table-bordered dt-responsive" width="100%">
+    </table>
+</div>
 <!-- ############################################### End ################################################## -->

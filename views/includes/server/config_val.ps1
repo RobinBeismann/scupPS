@@ -1,7 +1,6 @@
 # Create default values for all not yet set ones
 Write-Host("Creating default values..")
-. ".\views\includes\core\config.ps1"
 
-$ConfigVals.GetEnumerator() | ForEach-Object {
+(Get-scupPSDefaultValues).GetEnumerator() | ForEach-Object {
     Set-scupPSValue -Name $_.Name -Value (Get-scupPSValue -Name $_.Name)
 }

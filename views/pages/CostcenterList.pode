@@ -1,0 +1,21 @@
+<!-- Item Name: 'My Costcenters' -->
+
+<!-- ############################################### Code ################################################# -->
+
+$(
+    if(
+        $Data.authenticatedUser -and
+        ($managedCostCenters = Get-scupPSManagedCostCenters($Data))
+    ){
+        "You're a manager of the following costcenters:<br/><br/>"
+        if($(Test-scupPSRole -Name "helpdesk" -User $Data.authenticatedUser)){
+            "You're admin and can thus manage all costcenters."
+        }else{
+            $managedCostCenters -join "<br>"
+        }
+    }else{
+        "You don't have any costcenters to manage."
+    }
+)
+
+<!-- ############################################### End ################################################## -->

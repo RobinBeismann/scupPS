@@ -1,0 +1,85 @@
+<!-- Item Name: 'List Computer Summary' Item Role: 'helpdesk' -->
+
+<!-- ############################################### Code ################################################# -->
+
+<script type="text/javascript" >
+    var url = '/api';
+
+    var HttpClient = function() {
+    this.get = function(aUrl, aCallback, requesttype) {
+            var anHttpRequest = new XMLHttpRequest();
+            anHttpRequest.onreadystatechange = function() { 
+                if (anHttpRequest.readyState == 4 && anHttpRequest.status == 200)
+                    aCallback(anHttpRequest.responseText);
+            }
+            
+            requesttype = "GET";
+            
+            anHttpRequest.open( requesttype, aUrl, true );            
+            anHttpRequest.send( null );
+        }
+    }
+
+    function calculate(){
+        var collection = document.getElementById('collection').value;
+        `$('#maindatadiv').html('Retrieving, please wait..');
+
+        if(
+            (collection != "notset") && 
+            (collection != "")
+        ){                
+            var client = new HttpClient();
+
+            var suburl = (url + '?operation=ClientListSummary_submit' + 
+                            '&submitcollection=' + collection
+                            );
+                            
+            client.get( suburl, function(response) {
+                    if(response && response != ""){      
+                        `$('#maindatadiv').html(response);
+                    }else{
+                        `$('#maindatadiv').html('Unable to retrieve data');
+                    }           
+            }, "POST");
+        }else{
+            `$('#maindatadiv').html('Please select a device to show data.');
+        }
+    }
+
+
+    
+</script>
+
+$(
+    if($(Test-scupPSRole -Name "helpdesk" -User $Data.authenticatedUser)){
+        #Build Fields
+        @"
+        <!-- Form Name -->
+        <legend>List Client Summary</legend>
+    
+        <!-- Old Machine -->
+        <label class="control-label" for="dropdown-menu">Collection</label>  
+        <select class="form-control input-md" id="collection" onchange="calculate()">
+        <option value = 'notset'>Please select!</option>
+        $(  
+            $((Get-scupPSValue -Name "Collection_BrowsingAllowed").Split(";")) | ForEach-Object {     
+                "<option value='$($_)'>$($_)</option>"
+            }
+        )
+        </select>
+            
+        <div class="row justify-content-center">
+            <div class="row">
+                <div id="maindatadiv">
+                    Client summary will be shown when device is selected.
+                </div>
+            </div>
+        </div>
+"@
+    }else{
+        "You don't have access to this page"
+    }
+
+)
+
+<!-- ############################################### End ################################################## -->

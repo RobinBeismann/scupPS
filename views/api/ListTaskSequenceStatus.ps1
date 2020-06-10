@@ -1,7 +1,4 @@
-#Request Information
-$requestorMachine = $Data.Query.submitrequestmachine
-
-if($operation -eq "listtasksequencestatus" -and $(Test-scupPSRole -Name "helpdesk" -User $authenticatedUser) -and $requestorMachine){
+if($operation -eq "listtasksequencestatus" -and $(Test-scupPSRole -Name "helpdesk" -User $Data.authenticatedUser) -and ($requestorMachine = $Data.Query.submitrequestmachine)){
     
     $ts = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "
     SELECT 
@@ -40,7 +37,7 @@ if($operation -eq "listtasksequencestatus" -and $(Test-scupPSRole -Name "helpdes
             <td scope='col'>$($_.GroupName)</td>
             <td scope='col'>$($_.ActionName)</td>
             <td scope='col'>$($_.ExitCode)</td>
-            <td scope='col'>$(Replace-HTMLVariables -Value $_.ActionOutput)</td>
+            <td scope='col'>$(Get-HTMLString -Value $_.ActionOutput)</td>
         </tr>"
     }
 

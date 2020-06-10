@@ -1,0 +1,114 @@
+<!-- Item Name: 'List Client Details' Item Role: 'helpdesk' -->
+
+<!-- ############################################### Code ################################################# -->
+
+
+<script type="text/javascript" >
+    var url = '/api';
+
+    var HttpClient = function() {
+    this.get = function(aUrl, aCallback, requesttype) {
+            var anHttpRequest = new XMLHttpRequest();
+            anHttpRequest.onreadystatechange = function() { 
+                if (anHttpRequest.readyState == 4 && anHttpRequest.status == 200)
+                    aCallback(anHttpRequest.responseText);
+            }
+
+            requesttype = "GET";
+
+            anHttpRequest.open( requesttype, aUrl, true );            
+            anHttpRequest.send( null );
+        }
+    }
+
+    function calculate(){
+        var machine = document.getElementById('machine').value;
+        `$('#maindatadiv').html('Retrieving, please wait..');
+
+        if(
+            (machine != "notset") && 
+            (machine != "")
+        ){                
+            var client = new HttpClient();
+
+            var suburl = (url + '?operation=ClientDetails_submit' + 
+                            '&submitrequestmachine=' + machine
+                            );
+                            
+            client.get( suburl, function(response) {
+                    if(response && response != ""){      
+                        `$('#maindatadiv').html(response);
+                    }else{
+                        `$('#maindatadiv').html('Unable to retrieve data');
+                    }           
+            }, "POST");
+        }else{
+            `$('#maindatadiv').html('Please select a device to show data.');
+        }
+    }    
+</script>
+
+$(
+    if($(Test-scupPSRole -Name "helpdesk" -User $Data.authenticatedUser)){
+        #Get Computers
+		$WhereClause = $null
+				
+        $computers = Invoke-scupCCMSqlQuery -Query "
+            SELECT 
+                [systems].[ResourceID] ,
+                [systems].[ResourceType],
+                [systems].[Name0] AS Name,
+                [systems].[SMS_Unique_Identifier0],
+                [systems].[Resource_Domain_OR_Workgr0],
+                [systems].[Client0]
+            FROM 
+                [dbo].[v_R_System] as systems
+            WHERE 
+                ResourceID in 
+                    (
+                        SELECT
+                            membership.ResourceID
+                        FROM
+                            [dbo].[v_FullCollectionMembership] AS membership
+                        LEFT JOIN
+                            [dbo].[v_Collections] AS collections
+                        ON
+                            [collections].[SiteID] = [membership].CollectionID
+                        WHERE
+                            collections.CollectionName IN (@collections)
+                    )
+            AND [systems].[Client0] IS NOT NULL
+        " -Parameters @{
+            collections = (Get-scupPSValue -Name "Collection_BrowsingAllowed")
+        } | Sort-Object -Property Name
+
+        #Build Fields
+        @"
+        <!-- Form Name -->
+        <legend>List Client Details</legend>
+
+        <!-- Old Machine -->
+        <label class="control-label" for="dropdown-menu">Machine</label>  
+        <select class="form-control input-md" id="machine" onchange="calculate()">
+        <option value = 'notset'>Please select!</option>
+        $(  
+            $computers | ForEach-Object {     
+                "<option value='$($_.Name)'>$($_.Name)</option>"
+            }
+        )
+        </select>
+            
+        <div class="row justify-content-center">
+            <div class="row">
+                <div id="maindatadiv">
+                    Client details will be shown when device is selected.
+                </div>
+            </div>
+        </div>
+"@
+    }else{
+        "You don't have access to this page"
+    }
+)
+
+<!-- ############################################### End ################################################## -->

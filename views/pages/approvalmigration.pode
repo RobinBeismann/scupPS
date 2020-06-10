@@ -1,17 +1,5 @@
 <!-- Item Name: 'Approval Migration' Item Role: 'helpdesk' -->
 
-<!-- ############################################### Includes ############################################# -->
-$( 
-    #Include Config
-    . ".\views\includes\core\config.ps1"
-    . ".\views\includes\core\userLib.ps1"
-    
-    #Include Includes    
-    Get-ChildItem -Path "views\includes\lib" -File -Include "*.ps1" -Recurse | ForEach-Object {
-        "<!-- Including: $($_.FullName) -->"
-        . $_.FullName
-    }
-)
 <!-- ############################################### Code ################################################# -->
 
 
@@ -45,7 +33,7 @@ function calculate(){
     ){                
         var client = new HttpClient();
 
-        var suburl = (url + '?operation=approvaltakeoverpreview' + 
+        var suburl = (url + '?operation=ApprovalMigration_preview' + 
                         '&submitrequestmachine=' + oldmachine + 
                         '&submitnewmachine=' + newmachine
                         );
@@ -79,7 +67,7 @@ function submitData(){
     ){                
         var client = new HttpClient();
 
-        var suburl = (url + '?operation=approvaltakeover' + 
+        var suburl = (url + '?operation=ApprovalMigration_submit' + 
                         '&submitrequestmachine=' + oldmachine + 
                         '&submitnewmachine=' + newmachine
                         );
@@ -100,7 +88,7 @@ function submitData(){
 </script>
 
 $(
-    if($(Test-scupPSRole -Name "helpdesk" -User $authenticatedUser)){
+    if($(Test-scupPSRole -Name "helpdesk" -User $Data.authenticatedUser)){
         #Get Computers
 		$WhereClause = $null
 		$((Get-scupPSValue -Name "Collection_BrowsingAllowed").Split(";")) | ForEach-Object {

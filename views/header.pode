@@ -1,8 +1,4 @@
-﻿$( 
-    #Include Config
-    . ".\views\includes\core\config.ps1"
-)
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -17,6 +13,18 @@
     <link rel="stylesheet" href="assets/AdminLTE/css/adminlte.min.css" />
     <!-- Google Font: Source Sans Pro -->
     <link rel="stylesheet" href="assets/AdminLTE/css/sans_pro.css" />
+    <!-- Datatables -->
+    <link rel="stylesheet" type="text/css" href="assets/datatables/datatables.min.css"/>
+
+    <!-- REQUIRED SCRIPTS -->
     <!-- jQuery -->
     <script src="assets/jquery/jquery.min.js"></script>
+    <!-- Bootstrap 4 -->
+    <script src="assets/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <!-- AdminLTE App -->
+    <script src="assets/AdminLTE/js/adminlte.min.js"></script>
+    <!-- Datatables -->
+    <script type="text/javascript" src="assets/datatables/datatables.min.js"></script>
+    <!-- scupPS JS -->
+    <script type="text/javascript" src="assets/scupPS/scupPS.js"></script>
   </head>

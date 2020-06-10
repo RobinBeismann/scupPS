@@ -1,0 +1,54 @@
+<!-- Item Name: 'My Approvals (Pending)' -->
+<!-- Item Name: 'My Approvals (History)' Item Suburl: '&ShowApprovals=history' -->
+
+<!-- ############################################### Code ################################################# -->
+<script>
+    var columns = [];
+
+    function getDT() {
+        `$.ajax({
+        url: "/api?operation=AppRequest_Headers&ShowApprovals=$($Data.Query['ShowApprovals'])",
+        success: function (data) {
+            data = JSON.parse(data);
+            columnNames = Object.keys(data.data[0]);
+            for (var i in columnNames) {
+            columns.push({data: columnNames[i], 
+                        title: capitalizeFirstLetter(columnNames[i])});
+            }
+            console.log(columnNames);
+            `$('#datatable').DataTable( {
+                processing: true,
+                serverSide: true,
+                searchDelay: 1000,
+                ordering: false,
+                ajax: "/api?operation=AppRequest_Data&ShowApprovals=$($Data.Query['ShowApprovals'])",
+                columns: columns,
+                "columnDefs": [
+                    { "width": "10%", "targets": 0 },
+                    { "width": "2%", "targets": 1 },
+                    { "width": "3%", "targets": 2 },
+                    { "width": "15%", "targets": 3 },
+                    { "width": "10%", "targets": 4 },
+                    { "width": "8%", "targets": 6 },
+                ]
+            } );
+        }
+        });
+    }
+
+    function capitalizeFirstLetter(string) {
+        return string.charAt(0).toUpperCase() + string.slice(1);
+    }
+
+    `$(document).ready(function() {
+        getDT();    
+    } );
+
+</script>
+
+<div class="w-100 p-3">
+    <table id="datatable" class="table table-striped table-bordered dt-responsive" width="100%">
+    </table>
+</div>
+
+<!-- ############################################### End ################################################## -->

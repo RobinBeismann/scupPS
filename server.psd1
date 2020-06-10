@@ -9,5 +9,14 @@
         TransferEncoding = @{
             Default = "gzip"
         }
+        Static = @{
+            Cache = @{
+                Enable = $true               
+                Include = @(
+                    "*"
+                )
+                MaxAge = 604800
+            }
+        }
     }
 }
