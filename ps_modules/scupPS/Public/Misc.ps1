@@ -197,6 +197,11 @@ function Get-DataTablesResponse($Operation,$Data,$Start,$Length,$RecordsTotal,$D
     }
 
     $tbl.data = @($Data)
+    if($tbl.recordsTotal -eq 0){
+        $tbl.recordsTotal = 0
+        $tbl.recordsFiltered = 0
+        $tbl.data = @()       
+    }
 
     if(
         $AdditionalValues -and 

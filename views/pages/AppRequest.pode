@@ -19,7 +19,8 @@
             `$('#datatable').DataTable( {
                 processing: true,
                 serverSide: true,
-                searchDelay: 1000,
+                searchDelay: 500,
+                destroy: true,
                 ordering: false,
                 ajax: "/api?operation=AppRequest_Data&ShowApprovals=$($Data.Query['ShowApprovals'])",
                 columns: columns,
@@ -32,6 +33,23 @@
                     { "width": "8%", "targets": 6 },
                 ]
             } );
+
+            `$('div.dataTables_filter input').off('keyup.DT input.DT');
+ 
+            var searchDelay = null;
+            
+            `$('div.dataTables_filter input').on('keyup', function() {
+                var search = `$('div.dataTables_filter input').val();
+            
+                clearTimeout(searchDelay);
+            
+                searchDelay = setTimeout(function() {
+                    table = `$('#datatable').DataTable();
+                    if (search != null) {
+                        table.search(search).draw();
+                    }
+                }, 2000);
+            });
         }
         });
     }

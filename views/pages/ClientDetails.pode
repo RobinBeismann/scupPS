@@ -52,8 +52,8 @@ $(
     if($(Test-scupPSRole -Name "helpdesk" -User $Data.authenticatedUser)){
         #Get Computers
 		$WhereClause = $null
-				
-        $computers = Invoke-scupCCMSqlQuery -Query "
+		
+        $query = "
             SELECT 
                 [systems].[ResourceID] ,
                 [systems].[ResourceType],
@@ -75,10 +75,12 @@ $(
                         ON
                             [collections].[SiteID] = [membership].CollectionID
                         WHERE
-                            collections.CollectionName IN (@collections)
+                            collections.CollectionName IN ( SELECT * FROM STRING_SPLIT(@collections,';') )
                     )
             AND [systems].[Client0] IS NOT NULL
-        " -Parameters @{
+        "
+
+        $computers = Invoke-scupCCMSqlQuery -Query $query -Parameters @{
             collections = (Get-scupPSValue -Name "Collection_BrowsingAllowed")
         } | Sort-Object -Property Name
 
