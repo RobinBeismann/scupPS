@@ -77,7 +77,7 @@ $(
                         ON
                             [collections].[SiteID] = [membership].CollectionID
                         WHERE
-                            collections.CollectionName IN (@collections)
+                            collections.CollectionName IN ( SELECT * FROM STRING_SPLIT(@collections,';') )
                     )
             AND [systems].[Client0] IS NOT NULL
         " -Parameters @{

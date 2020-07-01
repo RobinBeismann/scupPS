@@ -229,7 +229,7 @@ if(
                 Set-PodeState -Name "CacheApprvlTableHeader" -Value ($res | Select-Object -First 1) | Out-Null
             }
         }
-
+        
         #Finally build our JSON Array
         Get-DataTablesResponse -Operation $operation -Start $Start -Length $length -RecordsTotal $TotalCount -Draw $Data.Query.'draw' -AdditionalValues @{ calledIsAdmin = $isAdmin } -Data (
             $res | ForEach-Object {
@@ -240,34 +240,36 @@ if(
                         "Application" = "$(if($url = Get-IconUrl -CI_ID $_.app_CI_ID -Hash $_.app_icon_hash){ "<img src='$url' style='height: 1.5em;' />   "} )$(Get-HTMLString($_.app_title))"
                         "Price" = Get-HTMLString($_.app_description)
                         "Comment" = Get-HTMLString($_.request_comments)
-                        "Actions" = $(                                                             
-                                if($ShowApprovals -ne "history"){
-                                    #Pending Buttons                                    
-                                    "<button id='btn_approve_$($_.request_guid)' name='btn_approve' class='btn btn-primary' onclick='handleApprovalRequest(`"AppRequest_approve`",`"$($_.request_guid)`"`)'>Approve</button>"
-                                    "<button id='btn_deny_$($_.request_guid)' name='btn_deny' class='btn btn-primary' onclick='handleApprovalRequest(`"AppRequest_deny`",`"$($_.request_guid)`")'>Deny</button>"
-                                }else{
-                                    #History Buttons                                    
-                                    "<button id='btn_approve_$($_.request_guid)' name='btn_approve' class='btn btn-primary' onclick='handleApprovalRequest(`"AppRequest_approve`",`"$($_.request_guid)`"`)'>Approve</button>"
-                                    
-                                    #Check if this request is already approved
-                                    if($_.request_state -eq 4){
-                                        #Switch to revoke
-                                        $btnAction = "AppRequest_revoke"
-                                        $btnDescription = "Revoke"
-                                        #Disable approve button
-                                        "<script type='text/javascript'>document.getElementById('btn_approve_$($_.request_guid)').disabled = true;</script>"
+                        "Actions" = $(                        
+                                if($managedCostCenters -or $isAdmin){                                  
+                                    if($ShowApprovals -ne "history"){
+                                        #Pending Buttons                                    
+                                        "<button id='btn_approve_$($_.request_guid)' name='btn_approve' class='btn btn-primary' onclick='handleApprovalRequest(`"AppRequest_approve`",`"$($_.request_guid)`"`)'>Approve</button>"
+                                        "<button id='btn_deny_$($_.request_guid)' name='btn_deny' class='btn btn-primary' onclick='handleApprovalRequest(`"AppRequest_deny`",`"$($_.request_guid)`")'>Deny</button>"
                                     }else{
-                                        $btnAction = "AppRequest_deny"
-                                        $btnDescription = "Deny"
+                                        #History Buttons                                    
+                                        "<button id='btn_approve_$($_.request_guid)' name='btn_approve' class='btn btn-primary' onclick='handleApprovalRequest(`"AppRequest_approve`",`"$($_.request_guid)`"`)'>Approve</button>"
+                                        
+                                        #Check if this request is already approved
+                                        if($_.request_state -eq 4){
+                                            #Switch to revoke
+                                            $btnAction = "AppRequest_revoke"
+                                            $btnDescription = "Revoke"
+                                            #Disable approve button
+                                            "<script type='text/javascript'>document.getElementById('btn_approve_$($_.request_guid)').disabled = true;</script>"
+                                        }else{
+                                            $btnAction = "AppRequest_deny"
+                                            $btnDescription = "Deny"
+                                        }
+                                        
+                                        "<button id='btn_deny_$($_.request_guid)' name='btn_deny' class='btn btn-primary' onclick='handleApprovalRequest(`"$btnAction`",`"$($_.request_guid)`")'>$btnDescription</button>"
+                                        
+                                        #Set Deny button to disabled if request is not approved
+                                        if($_.request_state -ne 4){
+                                            "<script type='text/javascript'>document.getElementById('btn_deny_$($_.request_guid)').disabled = true;</script>"
+                                        }
+                                        
                                     }
-                                    
-                                    "<button id='btn_deny_$($_.request_guid)' name='btn_deny' class='btn btn-primary' onclick='handleApprovalRequest(`"$btnAction`",`"$($_.request_guid)`")'>$btnDescription</button>"
-                                    
-                                    #Set Deny button to disabled if request is not approved
-                                    if($_.request_state -ne 4){
-                                        "<script type='text/javascript'>document.getElementById('btn_deny_$($_.request_guid)').disabled = true;</script>"
-                                    }
-                                     
                                 }
                             )                         
                     }
