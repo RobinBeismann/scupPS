@@ -93,6 +93,13 @@ function Get-scupPSDefaultValues(){
             Description = '[Optional] Copyright notice, respect the license delivered with scupPS'
             Type = 4
         }
+
+        "siteMotd" = @{
+            DefaultValue = ''
+            Description = '[Optional] Allows to show a message of the day over every page'
+            Type = 4
+        }
+
         "scupPSRoles" = @{
             DefaultValue = (@{
                 admin = "will-be-overwritten"
