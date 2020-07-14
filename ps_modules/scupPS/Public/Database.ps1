@@ -7,18 +7,50 @@ function Invoke-scupPSSqlQuery($Query,$Parameters,[Switch]$ParseGo){
         $additionalParam['ParseGo'] = $true
     }
 
-    return (
-        Invoke-Sqlcmd2 -ServerInstance (Get-PodeState -Name "sqlInstance") -Database (Get-PodeState -Name "sqlDB") -SqlParameters $Parameters -ErrorAction Stop -Query $Query @additionalParam
-    )
+    try{
+        $res = Invoke-Sqlcmd2 -ServerInstance (Get-PodeState -Name "sqlInstance") -Database (Get-PodeState -Name "sqlDB") -SqlParameters $Parameters -ErrorAction Stop -Query $Query @additionalParam
+        return $res
+    }catch{
+        Write-scupPSLog -Message `
+        "Error in SQL Query:
+        Query: 
+            $Query
+        Parameters:
+            $(
+                if($Parameters){
+                    $Parameters.GetEnumerator() | ForEach-Object { "$($_.Name): $($_.Value)" }
+                }
+            )
+        Error:
+            $_
+        "
+        Throw($_)
+    }
 }
 
 function Invoke-scupCCMSqlQuery($Query,$Parameters){    
     if(!$Parameters){
         $Parameters = @{}
     }
-    return (
-        Invoke-Sqlcmd2 -ServerInstance (Get-scupPSValue -Name "SCCM_SiteDatabaseInstance") -Database (Get-scupPSValue -Name "SCCM_SiteDatabaseName") -SqlParameters $Parameters -ErrorAction Stop -Query $Query
-    )
+    try{
+        $res = Invoke-Sqlcmd2 -ServerInstance (Get-scupPSValue -Name "SCCM_SiteDatabaseInstance") -Database (Get-scupPSValue -Name "SCCM_SiteDatabaseName") -SqlParameters $Parameters -ErrorAction Stop -Query $Query
+        return $res
+    }catch{
+        Write-scupPSLog -Message `
+        "Error in SQL Query:
+        Query: 
+            $Query
+        Parameters:
+            $(
+                if($Parameters){
+                    $Parameters.GetEnumerator() | ForEach-Object { "$($_.Name): $($_.Value)" }
+                }
+            )
+        Error:
+            $_
+        "
+        Throw($_)
+    }
 }
 
 function Add-SqlWhereClause($Query,$Clause){
