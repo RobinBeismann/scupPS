@@ -153,7 +153,6 @@ if(
         }else{ 
             $additionalClauses += "requests.CurrentState != '1' and requests.CurrentState !='2'"
         }
-
         #Case 1: User is costcenter manager but not admin -> filter for his users' requests
         if(
             !($isAdmin = Test-scupPSRole -Name "helpdesk" -User $Data.authenticatedUser) -and
@@ -164,7 +163,7 @@ if(
                 users.$attrCostCenter IN (
                     $(
                         ($managedCostcenters | ForEach-Object {
-                            "$_"
+                            "'$_'"
                         }) -Join ","
                     )
                 )

@@ -4,6 +4,13 @@ $(
     $Data.LoadedUsingPageLoader = $true
     $Data.authenticatedUser = (Get-scupPSAuthUser($Data))
     
+    if(
+        ($motd = Get-scupPSValue -Name "siteMotd") -and
+        ($motd -ne "")
+    ){
+        $motd
+    }
+
     if( 
         (Get-ServerReadyness) -eq $true
     ){
