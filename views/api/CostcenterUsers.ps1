@@ -35,7 +35,7 @@ if(
                 users.$attrCostCenter IN (
                     $(
                         ($managedCostcenters | ForEach-Object {
-                            "$_"
+                            "'$_'"
                         }) -Join ","
                     )
                 )
