@@ -83,6 +83,7 @@ if(
             $res = $headerCache | Select-Object -First 1
         }else{
             #This is either not a table preview or our cache is empty, process as usual and return results
+            
             $res = Invoke-scupCCMSqlQuery -Query $qMain -Parameters @{
                 StartRow = [int]$start
                 LengthRow = [int]$length
