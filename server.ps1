@@ -15,9 +15,9 @@ Start-PodeServer -Threads (Get-CimInstance -ClassName "Win32_Processor" | Select
     Add-PodeEndpoint -Address 127.0.0.1 -Protocol Http
 
     #Logging
-    New-PodeLoggingMethod -File -Path ./logs -Name "$($env:COMPUTERNAME)_errors" -MaxSize "1000" | Enable-PodeErrorLogging
-    New-PodeLoggingMethod -File -Path ./logs -Name "$($env:COMPUTERNAME)_request" -MaxSize "1000" | Enable-PodeRequestLogging
-    New-PodeLoggingMethod -File -Path ./logs -Name "$($env:COMPUTERNAME)_feed" -MaxSize "1000" | Add-PodeLogger -Name 'Feed' -ScriptBlock {
+    New-PodeLoggingMethod -File -Path ./logs -Name "$($env:COMPUTERNAME)_errors" -MaxSize "1000000" -MaxDays 30 | Enable-PodeErrorLogging
+    New-PodeLoggingMethod -File -Path ./logs -Name "$($env:COMPUTERNAME)_request" -MaxSize "1000000" -MaxDays 30 | Enable-PodeRequestLogging
+    New-PodeLoggingMethod -File -Path ./logs -Name "$($env:COMPUTERNAME)_feed" -MaxSize "1000000" -MaxDays 30 | Add-PodeLogger -Name 'Feed' -ScriptBlock {
         param($arg)        
         $string = ($arg.GetEnumerator() | ForEach-Object { $_.Name + ": " + $_.Value }) -join "; "
         return $string
