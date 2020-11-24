@@ -1,0 +1,101 @@
+<!-- Item Name: 'List App Deployments' Item Role: 'helpdesk' -->
+
+<!-- ############################################### Code ################################################# -->
+
+
+<script type="text/javascript">
+
+    function getDT() {
+        var columns = [];
+        var machine = document.getElementById('machine').value;
+        `$.ajax({
+        url: "/api?operation=ClientListAppDeployments_Headers&ClientName=" + machine,
+        success: function (data) {
+            var machine = document.getElementById('machine').value;
+            data = JSON.parse(data);
+            columnNames = Object.keys(data.data[0]);
+            for (var i in columnNames) {
+            columns.push({data: columnNames[i], 
+                        title: capitalizeFirstLetter(columnNames[i])});
+            }
+            console.log(columnNames);
+            
+            `$('#datatable').DataTable( {
+                processing: true,
+                serverSide: true,
+                searchDelay: 1000,
+                ordering: false,
+                ajax: "/api?operation=ClientListAppDeployments_Data&ClientName=" + machine,
+                columns: columns,
+                destroy: true
+            } );
+        }
+        });
+    }
+
+    function capitalizeFirstLetter(string) {
+        return string.charAt(0).toUpperCase() + string.slice(1);
+    }
+
+    
+</script>
+
+
+$(
+    if($(Test-scupPSRole -Name "helpdesk" -User $WebEvent.authenticatedUser)){
+        #Get Computers
+        $computers = Invoke-scupCCMSqlQuery -Query "
+            SELECT 
+                [systems].[ResourceID] ,
+                [systems].[ResourceType],
+                [systems].[Name0] AS Name,
+                [systems].[SMS_Unique_Identifier0],
+                [systems].[Resource_Domain_OR_Workgr0],
+                [systems].[Client0]
+            FROM 
+                [dbo].[v_R_System] as systems
+            WHERE 
+                ResourceID in 
+                    (
+                        SELECT
+                            membership.ResourceID
+                        FROM
+                            [dbo].[v_FullCollectionMembership] AS membership
+                        LEFT JOIN
+                            [dbo].[v_Collections] AS collections
+                        ON
+                            [collections].[SiteID] = [membership].CollectionID
+                        WHERE
+                            collections.CollectionName IN ( SELECT * FROM STRING_SPLIT(@collections,';') )
+                    )
+            AND [systems].[Client0] IS NOT NULL
+        " -Parameters @{
+            collections = (Get-scupPSValue -Name "Collection_BrowsingAllowed")
+        } | Sort-Object -Property Name
+
+        #Build Fields
+        @"
+        <!-- Form Name -->
+        <legend>List App Deployments</legend>
+
+        <!-- Old Machine -->
+        <label class="control-label" for="dropdown-menu">Machine</label>  
+        <select class="form-control input-md" id="machine" onchange="getDT()">
+        <option value = 'notset'>Please select!</option>
+        $(  
+            $computers | ForEach-Object {     
+                "<option value='$($_.Name)'>$($_.Name)</option>"
+            }
+        )
+        </select>
+                    
+        <div class="w-100 p-3">
+            <table id="datatable" class="table table-striped table-bordered dt-responsive" width="100%">
+            </table>
+        </div>
+"@
+    }else{
+        "You don't have access to this page"
+    }
+)
+<!-- ############################################### End ################################################## -->
