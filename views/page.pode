@@ -1,8 +1,8 @@
 <!-- ############################################### Header ############################################### -->
 <!-- ############################################### Main ################################################# -->
 $(
-    $Data.LoadedUsingPageLoader = $true
-    $Data.authenticatedUser = (Get-scupPSAuthUser($Data))
+    $WebEvent.LoadedUsingPageLoader = $true
+    $WebEvent.authenticatedUser = (Get-scupPSAuthUser)
     
     if(
         ($motd = Get-scupPSValue -Name "siteMotd") -and
@@ -14,7 +14,7 @@ $(
     if( 
         (Get-ServerReadyness) -eq $true
     ){
-        $page = $Data.Query['page']
+        $page = $WebEvent.Query['page']
         $navItem = (Get-PodeState -Name "navItems").GetEnumerator() | Where-Object { 
             $page -and 
             $_.Value.basename -eq $page 
@@ -24,21 +24,21 @@ $(
             !$navItem.Value.role -or
             (
                 ($role = $navItem.Value.role) -and
-                (Test-scupPSRole -Name $role -User $Data.authenticatedUser)
+                (Test-scupPSRole -Name $role -User $WebEvent.authenticatedUser)
             )
         ){
             if(
                 $page
             ){
-                Use-PodePartialView -Path "pages/$page" -Data $Data
+                Use-PodePartialView -Path "pages/$page"
             }else{
-                Use-PodePartialView -Path "pages/AppRequest" -Data $Data
+                Use-PodePartialView -Path "pages/AppRequest"
             }
         }else{
             "Access to this page is denied! You're not member of role $role!"
         }
     }else{
-        Use-PodePartialView -Path "pages/ConfigInitial" -Data $Data
+        Use-PodePartialView -Path "pages/ConfigInitial"
     }
 )
 

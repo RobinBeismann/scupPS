@@ -3,11 +3,11 @@ if(
     (
         ((Get-ServerReadyness) -eq $true) -and
         (
-            (Test-scupPSRole -Name "admin" -User $Data.authenticatedUser)
+            (Test-scupPSRole -Name "admin" -User $WebEvent.authenticatedUser)
         )
     )
 ){
-    $requestInfo = $Data.Query
+    $requestInfo = $WebEvent.Query
     $res = $true
     if(
         ((Get-scupPSDefaultValues).$($requestInfo.FieldName).Type -ne 5) -and

@@ -1,6 +1,6 @@
 $( 
-    $operation = $Data.Query.operation
-    $Data.authenticatedUser = (Get-scupPSAuthUser($Data))
+    $operation = $WebEvent.Query.operation
+    $WebEvent.authenticatedUser = (Get-scupPSAuthUser)
  
     $requestedOperation = ($operation.Split("_"))[0]
     #Include Includes    
@@ -40,7 +40,7 @@ $(
                 $_.CategoryInfo.ToString(),
                 $_.FullyQualifiedErrorId
         $errorString = $formatstring -f $fields
-        $Data.Query.GetEnumerator() | Foreach-Object {
+        $WebEvent.Query.GetEnumerator() | Foreach-Object {
             $errorString += "<b>$($_.Name):</b> $($_.Value)`n"
         }
         Get-HTMLString($errorString)

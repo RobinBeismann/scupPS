@@ -1,6 +1,6 @@
-if($operation -eq "ClientListUpdates_submit" -and $(Test-scupPSRole -Name "helpdesk" -User $Data.authenticatedUser)){
+if($operation -eq "ClientListUpdates_submit" -and $(Test-scupPSRole -Name "helpdesk" -User $WebEvent.authenticatedUser)){
     #Request Information
-    $requestorMachine = $Data.Query.submitrequestmachine
+    $requestorMachine = $WebEvent.Query.submitrequestmachine
 
     $query = Invoke-scupCCMSqlQuery -Query "
         SELECT 

@@ -1,4 +1,4 @@
-﻿function Get-scupPSAuthUser($Data){
+﻿function Get-scupPSAuthUser(){
     #Get values and return fake valid ones incase they were not yet set
     if(!($attrMCostcenters = Get-scupPSValue -Name "Attribute_managedcostCenters")){
         $attrMCostcenters = "ResourceID"
@@ -61,8 +61,8 @@
     
     if(
         ((Get-ServerReadyness) -eq $false) -or
-        !($Data.Auth.User.DistinguishedName) -or
-        !($AuthenticatedUser = Invoke-scupCCMSqlQuery -Query $userQuery -Parameters @{ distinguishedName = ($Data.Auth.User.DistinguishedName) })
+        !($WebEvent.Auth.User.DistinguishedName) -or
+        !($AuthenticatedUser = Invoke-scupCCMSqlQuery -Query $userQuery -Parameters @{ distinguishedName = ($WebEvent.Auth.User.DistinguishedName) })
     ){
         $AuthenticatedUser = $null
     }else{
@@ -72,8 +72,8 @@
     return $AuthenticatedUser
 }
 
-function Get-scupPSManagedCostCenters($Data){
-    $authenticatedUser = Get-scupPSAuthUser($Data)
+function Get-scupPSManagedCostCenters(){
+    $authenticatedUser = Get-scupPSAuthUser
     $managedCostCenters = $null
     if(
         ($managedCostCenters = $authenticatedUser.$(Get-scupPSValue -Name "Attribute_managedcostCenters")) -and

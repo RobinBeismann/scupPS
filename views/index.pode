@@ -2,8 +2,8 @@
 $( 
     
     #Include Header
-    Use-PodePartialView -Path header -Data $Data
-    Use-PodePartialView -Path nav -Data $Data
+    Use-PodePartialView -Path header
+    Use-PodePartialView -Path nav
 
 )
 <!-- ############################################### Main ################################################# -->
@@ -45,7 +45,7 @@ $(
 `$.ajax({
     url: "page$(      
         $queryString = $null
-        $Data.Query.GetEnumerator() | ForEach-Object {
+        $WebEvent.Query.GetEnumerator() | ForEach-Object {
             if(!$queryString){
                 $queryString = "?$($_.Name)=$($_.Value)"
             }else{        

@@ -2,8 +2,8 @@ if(
     ($operation -eq "CostcenterDeputies_Data") -or ($operation -eq "CostcenterDeputies_Headers")
 ){    
     if(
-        !($start = $Data.Query.start) -or
-        !($length = $Data.Query.length)
+        !($start = $WebEvent.Query.start) -or
+        !($length = $WebEvent.Query.length)
     ){
         $start = 0
         $length = 10
@@ -21,13 +21,13 @@ if(
     #Build an array for additional filters we need to apply
     $additionalClauses = @()
     if(
-        $Data.authenticatedUser
+        $WebEvent.authenticatedUser
     ){ 
-        $managedCostCenters = Get-scupPSManagedCostCenters($Data)
+        $managedCostCenters = Get-scupPSManagedCostCenters
         
         #Case 1: User is costcenter manager but not admin -> filter for his users' requests
         if(
-            !($isAdmin = Test-scupPSRole -Name "helpdesk" -User $Data.authenticatedUser) -and
+            !($isAdmin = Test-scupPSRole -Name "helpdesk" -User $WebEvent.authenticatedUser) -and
             $managedCostCenters
         ){
             $additionalClauses += 
@@ -42,7 +42,7 @@ if(
             "
         #Case 2: User is not costcenter manager and not admin -> filter for his requests
         }elseif(            
-            !($isAdmin = Test-scupPSRole -Name "helpdesk" -User $Data.authenticatedUser) -and
+            !($isAdmin = Test-scupPSRole -Name "helpdesk" -User $WebEvent.authenticatedUser) -and
             !$managedCostCenters
         ){
         #Case 3: User has nothing to view
@@ -55,7 +55,7 @@ if(
         $additionalClauses += "value != 'cleared'"
 
         #If datatablesJS sends a search value, add it to the SQL Query
-        if($search = $Data.Query.'search[value]'){
+        if($search = $WebEvent.Query.'search[value]'){
             $additionalClauses += "
                 LOWER([users].Full_User_Name0) LIKE LOWER(@Search) OR
                 LOWER(value) LIKE LOWER(@Search)
@@ -102,7 +102,7 @@ if(
         }
 
         #Finally build our JSON Array
-        Get-DataTablesResponse -Operation $operation -Start $Start -Length $length -RecordsTotal $TotalCount -Draw $Data.Query.'draw' -AdditionalValues @{ calledIsAdmin = $isAdmin } -Data (
+        Get-DataTablesResponse -Operation $operation -Start $Start -Length $length -RecordsTotal $TotalCount -Draw $WebEvent.Query.'draw' -AdditionalValues @{ calledIsAdmin = $isAdmin } -Data (
             $res | ForEach-Object {
                     [ordered]@{
                         "Costcenter" = $_.user_managedCostcenter

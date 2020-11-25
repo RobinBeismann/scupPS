@@ -1,7 +1,7 @@
-if($operation -eq "ApprovalMigration_preview" -or $operation -eq "ApprovalMigration_submit" -and $(Test-scupPSRole -Name "helpdesk" -User $Data.authenticatedUser)){
+if($operation -eq "ApprovalMigration_preview" -or $operation -eq "ApprovalMigration_submit" -and $(Test-scupPSRole -Name "helpdesk" -User $WebEvent.authenticatedUser)){
     #Request Information
-    $requestorMachine = $Data.Query.submitrequestmachine
-    $newMachine = $Data.Query.submitnewmachine
+    $requestorMachine = $WebEvent.Query.submitrequestmachine
+    $newMachine = $WebEvent.Query.submitnewmachine
     $oldComputerName = $requestorMachine
     $newComputerName = $newMachine
 
@@ -37,7 +37,7 @@ if($operation -eq "ApprovalMigration_preview" -or $operation -eq "ApprovalMigrat
                 
                 $approvalHistory = Get-CMAppApprovalHistory -requestObject $oldApproval
 
-                Send-AdminNotification -subject "[Approval Takeover] $($_.RequestedMachine)/$($_.User): $($_.Application) Approval taken over from $oldComputerName to $newComputerName by $($Data.authenticatedUser.FullUserName)" -body "History: $($approvalHistory | ForEach-Object { "<br/>$($_.Date): $($_.Comments)" } )"
+                Send-AdminNotification -subject "[Approval Takeover] $($_.RequestedMachine)/$($_.User): $($_.Application) Approval taken over from $oldComputerName to $newComputerName by $($WebEvent.authenticatedUser.FullUserName)" -body "History: $($approvalHistory | ForEach-Object { "<br/>$($_.Date): $($_.Comments)" } )"
                 $approvalHistory | ForEach-Object {
                     #Request does not yet exist, create it but set auto install to false
                     if(

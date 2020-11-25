@@ -51,7 +51,7 @@
 </script>
 
 $(
-    if($(Test-scupPSRole -Name "helpdesk" -User $Data.authenticatedUser)){
+    if($(Test-scupPSRole -Name "helpdesk" -User $WebEvent.authenticatedUser)){
         #Build Fields
         @"
         <!-- Form Name -->

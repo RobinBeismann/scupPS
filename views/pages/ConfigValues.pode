@@ -124,7 +124,7 @@ $(
 if(
     ((Get-ServerReadyness) -eq $true) -and
     (
-        (Test-scupPSRole -Name "admin" -User $Data.authenticatedUser)
+        (Test-scupPSRole -Name "admin" -User $WebEvent.authenticatedUser)
     )
 ){
     #Build Fields
