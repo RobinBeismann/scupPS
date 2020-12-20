@@ -7,7 +7,7 @@
 
     function getDT() {
         `$.ajax({
-        url: "/api?operation=AppRequest_Headers&ShowApprovals=$($Data.Query['ShowApprovals'])",
+        url: "/api?operation=AppRequest_Headers&ShowApprovals=$($WebEvent.Query['ShowApprovals'])",
         success: function (data) {
             data = JSON.parse(data);
             columnNames = Object.keys(data.data[0]);
@@ -22,7 +22,7 @@
                 searchDelay: 500,
                 destroy: true,
                 ordering: false,
-                ajax: "/api?operation=AppRequest_Data&ShowApprovals=$($Data.Query['ShowApprovals'])",
+                ajax: "/api?operation=AppRequest_Data&ShowApprovals=$($WebEvent.Query['ShowApprovals'])",
                 columns: columns,
                 "columnDefs": [
                     { "width": "10%", "targets": 0 },

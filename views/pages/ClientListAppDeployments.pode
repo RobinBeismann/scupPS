@@ -1,52 +1,41 @@
-<!-- Item Name: 'List Software' Item Role: 'helpdesk' -->
+<!-- Item Name: 'List App Deployments' Item Role: 'helpdesk' -->
 
 <!-- ############################################### Code ################################################# -->
 
 
-<script type="text/javascript" >
-    var url = '/api';
+<script type="text/javascript">
 
-    var HttpClient = function() {
-    this.get = function(aUrl, aCallback, requesttype) {
-            var anHttpRequest = new XMLHttpRequest();
-            anHttpRequest.onreadystatechange = function() { 
-                if (anHttpRequest.readyState == 4 && anHttpRequest.status == 200)
-                    aCallback(anHttpRequest.responseText);
-            }
-            
-            requesttype = "GET";
-            
-            anHttpRequest.open( requesttype, aUrl, true );            
-            anHttpRequest.send( null );
-        }
-    }
-
-    function calculate(){
+    function getDT() {
+        var columns = [];
         var machine = document.getElementById('machine').value;
-        `$('#maindatadiv').html('Retrieving, please wait..');
-
-        if(
-            (machine != "notset") && 
-            (machine != "")
-        ){                
-            var client = new HttpClient();
-
-            var suburl = (url + '?operation=ClientListSoftware_submit' + 
-                            '&submitrequestmachine=' + machine
-                            );
-                            
-            client.get( suburl, function(response) {
-                    if(response && response != ""){      
-                        `$('#maindatadiv').html(response);
-                    }else{
-                        `$('#maindatadiv').html('Unable to retrieve data');
-                    }           
-            }, "POST");
-        }else{
-            `$('#maindatadiv').html('Please select a device to show data.');
+        `$.ajax({
+        url: "/api?operation=ClientListAppDeployments_Headers&ClientName=" + machine,
+        success: function (data) {
+            var machine = document.getElementById('machine').value;
+            data = JSON.parse(data);
+            columnNames = Object.keys(data.data[0]);
+            for (var i in columnNames) {
+            columns.push({data: columnNames[i], 
+                        title: capitalizeFirstLetter(columnNames[i])});
+            }
+            console.log(columnNames);
+            
+            `$('#datatable').DataTable( {
+                processing: true,
+                serverSide: true,
+                searchDelay: 1000,
+                ordering: false,
+                ajax: "/api?operation=ClientListAppDeployments_Data&ClientName=" + machine,
+                columns: columns,
+                destroy: true
+            } );
         }
+        });
     }
 
+    function capitalizeFirstLetter(string) {
+        return string.charAt(0).toUpperCase() + string.slice(1);
+    }
 
     
 </script>
@@ -87,11 +76,11 @@ $(
         #Build Fields
         @"
         <!-- Form Name -->
-        <legend>List Software</legend>
+        <legend>List App Deployments</legend>
 
         <!-- Old Machine -->
         <label class="control-label" for="dropdown-menu">Machine</label>  
-        <select class="form-control input-md" id="machine" onchange="calculate()">
+        <select class="form-control input-md" id="machine" onchange="getDT()">
         <option value = 'notset'>Please select!</option>
         $(  
             $computers | ForEach-Object {     
@@ -99,13 +88,10 @@ $(
             }
         )
         </select>
-            
-        <div class="row justify-content-center">
-            <div class="col-auto">
-                <div id="maindatadiv">
-                    Software will be shown when device is selected.
-                </div>
-            </div>
+                    
+        <div class="w-100 p-3">
+            <table id="datatable" class="table table-striped table-bordered dt-responsive" width="100%">
+            </table>
         </div>
 "@
     }else{

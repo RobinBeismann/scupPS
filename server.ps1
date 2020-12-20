@@ -5,9 +5,9 @@ try{
 }catch{
     #Fail back to the system module
     if(!(Get-Module -Name 'Pode' -ListAvailable)){
-        Install-Module -Scope CurrentUser -Name 'Pode' -Confirm:$false -Force
+        Install-Module -Scope CurrentUser -Name 'Pode' -Confirm:$false -Force -MinimumVersion "2.0.0"
     }
-    Import-Module -Name "Pode"
+    Import-Module -Name "Pode" -MinimumVersion "2.0.0"
     Write-Host("Loaded system Pode module.")
 }
 
@@ -62,10 +62,10 @@ Start-PodeServer -Threads (Get-CimInstance -ClassName "Win32_Processor" | Select
 
     #Load SQL Module
     Write-Host("Loading 'Invoke-SqlCmd2' Module..")
-    Import-PodeModule -Path './ps_modules/Invoke-SqlCmd2/Invoke-SqlCmd2.psm1' -Now
+    Import-PodeModule -Path './ps_modules/Invoke-SqlCmd2/Invoke-SqlCmd2.psm1'
     #Load scupPS Module
     Write-Host("Loading 'scupPS' Module..")
-    Import-PodeModule -Path './ps_modules/scupPS/scupPS.psm1' -Now
+    Import-PodeModule -Path './ps_modules/scupPS/scupPS.psm1'
     #Create Database Schema if not exist
     Write-Host("Creating DB Schema if not exist at $(Get-PodeState -Name "sqlInstance") in $(Get-PodeState -Name "sqlDB")..")
     Invoke-scupPSSqlQuery -ParseGo -Query "
@@ -106,19 +106,16 @@ Start-PodeServer -Threads (Get-CimInstance -ClassName "Win32_Processor" | Select
     if(Test-PodeIsIIS){
         #Running as IIS Sub Process, use Windows Auth
         Write-Host("Using IIS Authentication")
-        Add-PodeAuthIIS -Name 'IISAuth' -NoGroups -NoLocalCheck
-        $Auth = Get-PodeAuthMiddleware -Name 'IISAuth'
+        Add-PodeAuthIIS -Name 'Auth' -NoGroups -NoLocalCheck
     }else{
         #Running as non IIS Process, entering Debug Mode
         Write-Host("Using Debug Authentication")
-        $custom_type = New-PodeAuthType -Custom -ScriptBlock {
-            param($e, $opts)
-
+        $authScheme = New-PodeAuthScheme -Custom -Type "http" -ScriptBlock {
             return @("test")
         }
     
         # now, add a new custom authentication method using the type you created above
-        $custom_type | Add-PodeAuth -Name 'Login' -ScriptBlock {
+        $authScheme | Add-PodeAuth -Name 'Auth' -ScriptBlock {
             param($username)
     
             # check if the client is valid in some database
@@ -126,26 +123,22 @@ Start-PodeServer -Threads (Get-CimInstance -ClassName "Win32_Processor" | Select
             # return a user object (return $null if validation failed)
             return  @{ User = "test" }
         }
-        $Auth = Get-PodeAuthMiddleware -Name 'Login'
     }
 
     #Routes
     Write-Host("Server: Adding 'Index' Route..")
-    Add-PodeRoute -Method Get -Path '/' -Middleware $Auth -ScriptBlock {
-        param($Data)        
-        Write-PodeViewResponse -Path 'index' -Data $Data
+    Add-PodeRoute -Method Get -Path '/' -Authentication 'Auth' -ScriptBlock {
+        Write-PodeViewResponse -Path 'index'
     }
 
     Write-Host("Server: Adding 'Page' Route..")
-    Add-PodeRoute -Method Get -Path '/page' -Middleware $Auth -ScriptBlock {
-        param($Data)               
-        Write-PodeViewResponse -Path 'page' -Data $Data
+    Add-PodeRoute -Method Get -Path '/page' -Authentication 'Auth'  -ScriptBlock {
+        Write-PodeViewResponse -Path 'page'
     }
     
     Write-Host("Server: Adding 'api' Route..")
-    Add-PodeRoute -Method Get -Path '/api' -Middleware $Auth -ScriptBlock {
-        param($Data)               
-        Write-PodeViewResponse -Path 'api' -Data $Data
+    Add-PodeRoute -Method Get -Path '/api' -Authentication 'Auth' -ScriptBlock {
+        Write-PodeViewResponse -Path 'api'
     }
 
     Write-Host("Server: Adding 'healthcheck' Route..")

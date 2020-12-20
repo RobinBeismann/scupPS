@@ -1,5 +1,5 @@
 if(
-    ($operation -eq "ApprovalAdmins_Data") -or ($operation -eq "ApprovalAdmins_Headers")
+    ($operation -eq "ClientListAppDeployments_Data") -or ($operation -eq "ClientListAppDeployments_Headers") -and ($isAdmin = Test-scupPSRole -Name "helpdesk" -User $WebEvent.authenticatedUser)
 ){    
     if(
         !($start = $WebEvent.Query.start) -or
@@ -10,71 +10,73 @@ if(
     }
 
     #App Query
-    $qMain = (Get-PodeState -Name "sqlQueries").GetUsersByGroup
+    $qMain = (Get-PodeState -Name "sqlQueries").GetClientListAppDeployments
     #Count Query
-    $qMainCount = (Get-PodeState -Name "sqlQueries").GetUsersByGroupCount
+    $qMainCount = (Get-PodeState -Name "sqlQueries").GetClientListAppDeploymentsCount
 
     #Build an array for additional filters we need to apply
     $additionalClauses = @()
     if(
-        $WebEvent.authenticatedUser -and
-        ($isAdmin = Test-scupPSRole -Name "helpdesk" -User $WebEvent.authenticatedUser)
+        $WebEvent.authenticatedUser
     ){ 
         #If datatablesJS sends a search value, add it to the SQL Query
         if($search = $WebEvent.Query.'search[value]'){
             $additionalClauses += "
-                LOWER([users].Full_User_Name0) LIKE LOWER(@Search) OR
-                LOWER(value) LIKE LOWER(@Search)
+                LOWER(Descript) LIKE LOWER(@Search)
             "
         }
-
         #Add our query clauses to the existing statements
         $additionalClauses | Foreach-Object {
             $qMain        = Add-SqlWhereClause -Query $qMain -Clause $_
             $qMainCount   = Add-SqlWhereClause -Query $qMainCount -Clause $_
         }
-
+        
         #Add a filter for the Range
         $qMain += "
-            ORDER BY user_displayname
+            ORDER BY [CI_ID]
             OFFSET @StartRow ROWS
             FETCH NEXT @LengthRow ROWS ONLY
         "
-
         #Retrieve Table Headers only once and cache them in Pode afterwards
         if(
-            ($operation -eq "ApprovalAdmins_Headers") -and
-            ($headerCache = Get-PodeState -Name "CachehelpdeskTableHeader")
+            ($operation -eq "ClientListAppDeployments_Headers") -and
+            ($headerCache = Get-PodeState -Name "CacheClientListAppDeployments_Headers")
         ){
             #Strip it down to one row, thats enough
             $res = $headerCache | Select-Object -First 1
         }else{
             #This is either not a table preview or our cache is empty, process as usual and return results
-            
             $res = Invoke-scupCCMSqlQuery -Query $qMain -Parameters @{
                 StartRow = [int]$start
                 LengthRow = [int]$length
                 Search = "%$search%"
-                groupName = (Get-scupPSRole -Name "helpdesk")
+                ClientName = $WebEvent.Query.ClientName
             }
             $TotalCount = (Invoke-scupCCMSqlQuery -Query $qMainCount -Parameters @{
                 StartRow = [int]$start
                 LengthRow = [int]$length
                 Search = "%$search%"
-                groupName = (Get-scupPSRole -Name "helpdesk")
+                ClientName = $WebEvent.Query.ClientName
             })[0]
+            
             #Write our result to the Pode Cache so we can reuse it
-            if($operation -eq "ApprovalAdmins_Headers"){
-                Set-PodeState -Name "CachehelpdeskTableHeader" -Value ($res | Select-Object -First 1) | Out-Null
+            if($operation -eq "ClientListAppDeployments_Headers"){
+                Set-PodeState -Name "CacheClientListAppDeployments_Headers" -Value ($res | Select-Object -First 1) | Out-Null
             }
         }
 
         #Finally build our JSON Array
-        Get-DataTablesResponse -Operation $operation -Start $Start -Length $length -RecordsTotal $TotalCount -Draw $WebEvent.Query.'draw' -AdditionalValues @{ calledIsAdmin = $isAdmin } -Data (
+        Get-DataTablesResponse -Operation $operation -Start $Start -Length $length -RecordsTotal $TotalCount -Draw $WebEvent.Query.'draw' -AdditionalValues @{ calledIsAdmin = $isAdmin; ClientName = $WebEvent.Query.ClientName } -Data (
             $res | ForEach-Object {
-                    [ordered]@{
-                        "User" = "<a href='mailto:$($_.user_mail)'>$(Get-HTMLString($_.user_displayname))</a>"
-                    }
+                [ordered]@{
+                    CI_ID = $_.CI_ID
+                    TargetCollectionID = $_.TargetCollectionID
+                    TargetCollectionName = $_.TargetCollectionName
+                    Descript = $_.Descript
+                    Status = $_.status
+                    StartTime = $_.StartTime
+                    LastModificationTime = $_.LastModificationTime
+                }
             }
         )
        

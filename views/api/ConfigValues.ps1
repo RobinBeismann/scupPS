@@ -3,11 +3,11 @@ if(
     (
         ((Get-ServerReadyness) -eq $false) -or
         (
-            (Test-scupPSRole -Name "admin" -User $Data.authenticatedUser)
+            (Test-scupPSRole -Name "admin" -User $WebEvent.authenticatedUser)
         )
     )
 ){
-    $requestInfo = $Data.Query
+    $requestInfo = $WebEvent.Query
     if(
         ((Get-scupPSDefaultValues).$($requestInfo.FieldName).Type -ne 5) -and
         (
@@ -48,7 +48,7 @@ if(
 
         "scupPSAdminGroup" {
             if(
-                ($user = Get-CimInstance -Computer (Get-scupPSValue -Name "SCCM_SiteServer") -Namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -Query "select * from sms_r_user where DistinguishedName='$($Data.Auth.User.DistinguishedName.Replace("\","\\"))'") -and
+                ($user = Get-CimInstance -Computer (Get-scupPSValue -Name "SCCM_SiteServer") -Namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -Query "select * from sms_r_user where DistinguishedName='$($WebEvent.Auth.User.DistinguishedName.Replace("\","\\"))'") -and
                 ($requestInfo.FieldValue -in $user.UserGroupName)
             ){
                 $res = $true

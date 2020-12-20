@@ -1,8 +1,8 @@
-if($operation -eq "ApprovalCreation_Preview" -or $operation -eq "ApprovalCreation_Create" -and $(Test-scupPSRole -Name "helpdesk" -User $Data.authenticatedUser)){
+if($operation -eq "ApprovalCreation_Preview" -or $operation -eq "ApprovalCreation_Create" -and $(Test-scupPSRole -Name "helpdesk" -User $WebEvent.authenticatedUser)){
     #Request Information
-    $requestorMachineName = $Data.Query.submitrequestmachine
-    $requestorUser = $Data.Query.submitrequestuser
-    $requestorApplication = $Data.Query.submitrequestapplication
+    $requestorMachineName = $WebEvent.Query.submitrequestmachine
+    $requestorUser = $WebEvent.Query.submitrequestuser
+    $requestorApplication = $WebEvent.Query.submitrequestapplication
     
     $requestorMachine = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "Select * From SMS_R_SYSTEM WHERE Name='$requestorMachineName'" | Get-CimInstance
     $existingApproval = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "Select * From SMS_UserApplicationRequest WHERE RequestedMachine='$requestorMachineName' AND ModelName = '$requestorApplication'" | Get-CimInstance
@@ -22,8 +22,8 @@ if($operation -eq "ApprovalCreation_Preview" -or $operation -eq "ApprovalCreatio
         }
         
         if($operation -eq "ApprovalCreation_Create"){
-            $approverFirstname = $Data.authenticatedUser.givenName
-            $approverLastname = $Data.authenticatedUser.sn
+            $approverFirstname = $WebEvent.authenticatedUser.givenName
+            $approverLastname = $WebEvent.authenticatedUser.sn
             $approverDisplayNameV1 = "$approverLastname, $approverFirstname" 
             $comment = "Pre-approved by $($approverDisplayNameV1)."
             

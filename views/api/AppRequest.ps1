@@ -4,8 +4,8 @@ if(
     ($operation -eq "AppRequest_revoke")
 ){
     #Request Information
-    $requestID = $Data.Query.submitrequestid
-    $denyreason = $Data.Query.submitdenyreason
+    $requestID = $WebEvent.Query.submitrequestid
+    $denyreason = $WebEvent.Query.submitdenyreason
 
     $currentDate = [string](Get-Date -Format "yyyy\/MM\/dd hh:MM")
 
@@ -16,7 +16,7 @@ if(
 
     $reqObj = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "Select * From SMS_UserApplicationRequest where RequestGUID='$requestID'" | Get-CimInstance
     $reqObjRequestor = Get-CimInstance -namespace (Get-scupPSValue -Name "SCCM_SiteNamespace") -computer (Get-scupPSValue -Name "SCCM_SiteServer") -query "Select * From SMS_R_USER where Sid='$($reqObj.UserSid)'"
-    $reqObjApprover = $Data.authenticatedUser
+    $reqObjApprover = $WebEvent.authenticatedUser
     $reqObjOO = [wmi]"\\$(Get-scupPSValue -Name "SCCM_SiteServer")\$((Get-scupPSValue -Name "SCCM_SiteNamespace")):SMS_UserApplicationRequest.RequestGuid=`"$requestId`"" #Object for object oriented calls
     
     #Check if requestor has the competence to approve requests for this costcenter
@@ -125,8 +125,8 @@ if(
     ($operation -eq "AppRequest_Data") -or ($operation -eq "AppRequest_Headers")
 ){    
     if(
-        !($start = $Data.Query.start) -or
-        !($length = $Data.Query.length)
+        !($start = $WebEvent.Query.start) -or
+        !($length = $WebEvent.Query.length)
     ){
         $start = 0
         $length = 10
@@ -142,12 +142,13 @@ if(
     $qMainCount = (Get-PodeState -Name "sqlQueries").GetAppRequestCount
     #Build an array for additional filters we need to apply
     $additionalClauses = @()
+    
     if(
-        $Data.authenticatedUser
+        $WebEvent.authenticatedUser
     ){ 
-        $managedCostCenters = Get-scupPSManagedCostCenters($Data)
+        $managedCostCenters = Get-scupPSManagedCostCenters
         #Filter for history if required
-        $ShowApprovals = $Data.Query['ShowApprovals']        
+        $ShowApprovals = $WebEvent.Query['ShowApprovals']        
         if($ShowApprovals -ne "history"){
             $additionalClauses += "requests.CurrentState = '1' and requests.CurrentState !='2'"
         }else{ 
@@ -155,7 +156,7 @@ if(
         }
         #Case 1: User is costcenter manager but not admin -> filter for his users' requests
         if(
-            !($isAdmin = Test-scupPSRole -Name "helpdesk" -User $Data.authenticatedUser) -and
+            !($isAdmin = Test-scupPSRole -Name "helpdesk" -User $WebEvent.authenticatedUser) -and
             $managedCostCenters
         ){
             $additionalClauses += 
@@ -170,18 +171,18 @@ if(
             "
         #Case 2: User is not costcenter manager and not admin -> filter for his requests
         }elseif(            
-            !($isAdmin = Test-scupPSRole -Name "helpdesk" -User $Data.authenticatedUser) -and
+            !($isAdmin = Test-scupPSRole -Name "helpdesk" -User $WebEvent.authenticatedUser) -and
             !$managedCostCenters
         ){
             $additionalClauses += 
             "
-                users.SID0 = '$($Data.authenticatedUser.SID)'
+                users.SID0 = '$($WebEvent.authenticatedUser.SID)'
             "
         }
         #Case 3: User is admin -> add no further filter
 
         #If datatablesJS sends a search value, add it to the SQL Query
-        if($search = $Data.Query.'search[value]'){
+        if($search = $WebEvent.Query.'search[value]'){
             $additionalClauses += "
                 LOWER(apps.app_description) LIKE LOWER(@Search) OR
                 LOWER(apps.app_manufacturer) LIKE LOWER(@Search) OR
@@ -230,7 +231,7 @@ if(
         }
         
         #Finally build our JSON Array
-        Get-DataTablesResponse -Operation $operation -Start $Start -Length $length -RecordsTotal $TotalCount -Draw $Data.Query.'draw' -AdditionalValues @{ calledIsAdmin = $isAdmin } -Data (
+        Get-DataTablesResponse -Operation $operation -Start $Start -Length $length -RecordsTotal $TotalCount -Draw $WebEvent.Query.'draw' -AdditionalValues @{ calledIsAdmin = $isAdmin } -Data (
             $res | ForEach-Object {
                     [ordered]@{
                         "User" = "<a href='mailto:$($_.user_mail)'>$(Get-HTMLString($_.user_displayname))</a>"
